@@ -200,7 +200,7 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
                           "kernel"        = "gauss",
                           "error"         = TRUE,
                           "nRegGrid"      = nRegGrid))
-  ## Mixture ############################################################################
+  ## Expdist ############################################################################
   FPCA_expd_obj <- FPCA(Ly     = Y_expd_list, 
                         Lt     = U_list, 
                         optns = list(

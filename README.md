@@ -4,7 +4,7 @@ This repository contains the R-package `ReconstPoFD`. The only function containe
 
 The underlying method is described in:  
 [On the Optimal Reconstruction of Partially Observed Functional Data](https://arxiv.org/abs/1710.10099)  
-by Alois Kneip, Dominik Liebl (arXiv:1710.10099)
+by Alois Kneip and Dominik Liebl (arXiv:1710.10099)
 
 ## Installing the R-package
 
@@ -16,6 +16,6 @@ by Alois Kneip, Dominik Liebl (arXiv:1710.10099)
 
 The R-script `MC_simulation.R` allows you to reconstruct the simulation study in:  
 [On the Optimal Reconstruction of Partially Observed Functional Data](https://arxiv.org/abs/1710.10099)  
-by Alois Kneip, Dominik Liebl (arXiv:1710.10099)
+by Alois Kneip and Dominik Liebl (arXiv:1710.10099)
 
-The R-script also contains the AIC-based selection of the truncation parameter K.
+Note: The R-script also contains the AIC-based selection of the truncation parameter K.

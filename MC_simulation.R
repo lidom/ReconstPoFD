@@ -1,20 +1,10 @@
-library("roxygen2")
+## R-packages 
 library("devtools")
-setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/R/Code_for_Public")
-create("ReconstPoFD")
-
-setwd("./ReconstPoFD")
-document()
-
-setwd("..")
-install("ReconstPoFD")
-
-
-## R-packages and functions
-library("doParallel")    # parallel-looping
-library("fdapace")       # for estimating mean- and covariance-function
-library("here")          # For finding files
-source(here("R_fcts.R")) # Source in the reconstruction function
+# install_github("lidom/ReconstPoFD/ReconstPoFD")
+# install.packages("doParallel", "fdapace")
+library("ReconstPoFD")  # contains the function 'reconst_fun()'
+library("doParallel")   # parallel-looping
+library("fdapace")      # for estimating mean- and covariance-function
 
 
 ## #######################################
@@ -254,6 +244,10 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
   }
   ## ###################################################################
   
+  
+  ## ############################## ############################## ############################
+  ## Selecting K
+  ## ############################## ############################## ############################
   ## #########################################################
   ## Nonparametric variance estimation 
   ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
@@ -284,7 +278,7 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
   
   
   ## ############################
-  ## Selecting K.hat via AIC 
+  ## Selecting K via AIC 
   ## ############################
   K.max    <- 4
   AIC.norm <- rep(NA,K.max)
@@ -342,9 +336,9 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
     cov_expd_la_mat <- FPCA_expd_obj$phi[,1:K.expd,drop=FALSE] %*% t(FPCA_expd_obj$phi[,1:K.expd,drop=FALSE]) * FPCA_expd_obj$lambda[1:K.expd]
   }
   
-  ##################################################
+  ## ##########################  ## ################################  ## ################################
   ## Reconstructing all functions
-  ## ###############################################
+  ## ##########################  ## ################################  ## ################################
   Y.reconst.norm.list  <- vector("list", n)
   Y.reconst.expd.list  <- vector("list", n)
   X.reconst.norm.list  <- vector("list", n)
@@ -394,4 +388,4 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
 rownames(sim.results) <- c("MAE_norm", "MAE_expd", "K.norm", "K.expd")
 
 ## Save results:
-## save(sim.results, file = paste0("T",T,"_n",n,"_simResults.RData"))
+## save(sim.results, file = paste0("n",n,"_m",m,"_simResults.RData"))

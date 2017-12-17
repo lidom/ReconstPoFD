@@ -8,8 +8,9 @@ by Alois Kneip, Dominik Liebl (arXiv:1710.10099)
 
 ## Installing the R-package
 
-library(devtools)
-install_github("lidom/ReconstPoFD/ReconstPoFD")
+`library(devtools)`
+
+`install_github("lidom/ReconstPoFD/ReconstPoFD")`
 
 ## Replication of Simulation Results
 

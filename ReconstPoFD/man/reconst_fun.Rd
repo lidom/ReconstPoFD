@@ -5,20 +5,20 @@
 \title{Reconstruction Function}
 \usage{
 reconst_fun(cov_la_mat, domain_grid, Y_cent_sm_i, U_sm_i, K,
-  pre.smooth = FALSE)
+  pre_smooth = FALSE)
 }
 \arguments{
-\item{cov_la_mat}{Discretized covariance function over [a,b]x[a,b]}
+\item{cov_la_mat}{Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}}
 
-\item{domain_grid}{Equidistant discretization grid in [a,b]}
+\item{domain_grid}{Equidistant discretization grid in \eqn{[a,b]}{[a,b]}}
 
-\item{Y_cent_sm_i}{Centered function values of the ith function: Y[{ij}]-hat(mu)(U[{ij}]), j=1,...,m",}
+\item{Y_cent_sm_i}{Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},}
 
-\item{U_sm_i}{Discretization points of the ith function: U[{i1}],...,U[{im}]}
+\item{U_sm_i}{Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}}
 
 \item{K}{Truncation parameter}
 
-\item{pre.smooth}{If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^*). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)}
+\item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.

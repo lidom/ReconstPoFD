@@ -3,10 +3,10 @@
 #' This function allows you to reconstruct the missing parts of a function given the observed parts.
 #' @param cov_la_mat  Discretized covariance function over [a,b]x[a,b]
 #' @param domain_grid Equidistant discretization grid in [a,b]
-#' @param Y_cent_sm_i Centered function values of the ith function: "Y_{ij}-\hat\mu(U_{ij}), j=1,...,m",
-#' @param U_sm_i      Discretization points of the ith function: U_{i1},...,U_{im}
+#' @param Y_cent_sm_i Centered function values of the ith function: Y[{ij}]-hat(mu)(U[{ij}]), j=1,...,m",
+#' @param U_sm_i      Discretization points of the ith function: U[{i1}],...,U[{im}]
 #' @param K           Truncation parameter
-#' @param pre.smooth  If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: "L^\ast"). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)
+#' @param pre.smooth  If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^*). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)
 #' @export reconst_fun
 
 reconst_fun <- function(

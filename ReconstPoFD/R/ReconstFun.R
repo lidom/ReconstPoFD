@@ -3,15 +3,16 @@
 #' This function allows you to reconstruct the missing parts of a function given the observed parts.
 #' @param cov_la_mat  Discretized covariance function over [a,b]x[a,b]
 #' @param domain_grid Equidistant discretization grid in [a,b]
-#' @param Y_cent_sm_i Centered function values of the ith function: Y_{ij}-\hat\mu(U_{ij}), j=1,...,m,
+#' @param Y_cent_sm_i Centered function values of the ith function: "Y_{ij}-\hat\mu(U_{ij}), j=1,...,m",
 #' @param U_sm_i      Discretization points of the ith function: U_{i1},...,U_{im}
 #' @param K           Truncation parameter
-#' @param pre.smooth  If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^\ast). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)
+#' @param pre.smooth  If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: "L^\ast"). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)
+#' @export reconst_fun
 
 reconst_fun <- function(
   cov_la_mat,     # Discretized covariance function over [a,b]x[a,b]
   domain_grid,    # Equidistant discretization grid in [a,b]
-  Y_cent_sm_i,    # Centered function values of the ith function: Y_{ij}-\hat\mu(U_{ij}), j=1,...,m,
+  Y_cent_sm_i,    # Centered function values of the ith function: "Y_{ij}-\hat\mu(U_{ij}), j=1,...,m",
   U_sm_i,         # Discretization points of the ith function: U_{i1},...,U_{im}
   K,              # Truncation parameter
   pre.smooth=FALSE
@@ -25,8 +26,8 @@ reconst_fun <- function(
   grid_sm_compl_vec       <- domain_grid[sm_compl_gridloc]
   ##
   if(pre.smooth==TRUE){
-    smooth.fit              <- smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
-    Y_cent_sm_compl_fit_i   <- predict(smooth.fit,grid_sm_compl_vec)$y
+    smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
+    Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
   }
   ##
   ## Compute 'small' eigenvalues and eigenfunctions
@@ -41,7 +42,7 @@ reconst_fun <- function(
   }
   ## Standardize direction of eigenfunctions
   for(k in 1:K){
-    evec_sm_compl[,k] <- evec_sm_compl[,k]*sign(cov(evec_sm_compl[,k], 1:length(evec_sm_compl[,k])))
+    evec_sm_compl[,k] <- evec_sm_compl[,k]*sign(stats::cov(evec_sm_compl[,k], 1:length(evec_sm_compl[,k])))
   }
   ## #################################################
   ## 'Extrapolated/Reconstructive' eigenfunctions
@@ -54,13 +55,13 @@ reconst_fun <- function(
   ## Evaluate 'evec_sm_compl' at 'U_sm_i'
   evec_sm_compl_at_sm_i        <- matrix(NA, length(U_sm_i), K)
   for(k in 1:K){
-    evec_sm_compl_at_sm_i[,k]  <- spline(y=evec_sm_compl[,k], x=grid_sm_compl_vec, xout = U_sm_i)$y
+    evec_sm_compl_at_sm_i[,k]  <- stats::spline(y=evec_sm_compl[,k], x=grid_sm_compl_vec, xout = U_sm_i)$y
   }
   ## 'Small' PC-scores (OLS-approach)
-  xi_sm_i         <- unname(c(lm(c(na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
+  xi_sm_i         <- unname(c(stats::lm(c(na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
   ## Refitting (only of effect in the more noisy first run)
   Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
-  xi_sm_i         <- unname(c(lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
+  xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
   ##
   ## Recovering: ###########################
   reconst_ls_vec    <- rep(0, length(domain_grid))

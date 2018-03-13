@@ -12,13 +12,13 @@ reconst_fun(cov_la_mat, domain_grid, Y_cent_sm_i, U_sm_i, K,
 
 \item{domain_grid}{Equidistant discretization grid in [a,b]}
 
-\item{Y_cent_sm_i}{Centered function values of the ith function: Y_{ij}-\hat\mu(U_{ij}), j=1,...,m,}
+\item{Y_cent_sm_i}{Centered function values of the ith function: "Y_{ij}-\hat\mu(U_{ij}), j=1,...,m",}
 
 \item{U_sm_i}{Discretization points of the ith function: U_{i1},...,U_{im}}
 
 \item{K}{Truncation parameter}
 
-\item{pre.smooth}{If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^\ast). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)}
+\item{pre.smooth}{If pre.smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: "L^\ast"). If pre.smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: L)}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.

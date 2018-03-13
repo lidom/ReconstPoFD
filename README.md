@@ -14,7 +14,7 @@ by Alois Kneip and Dominik Liebl (arXiv:1710.10099)
 
 ## Replication of Simulation Results
 
-The R-script `MC_simulation.R` allows you to reconstruct the simulation study in:  
+The R-script `Simulation.R` allows you to reconstruct the simulation study in:  
 [On the Optimal Reconstruction of Partially Observed Functional Data](https://arxiv.org/abs/1710.10099)  
 by Alois Kneip and Dominik Liebl (arXiv:1710.10099)
 

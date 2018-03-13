@@ -133,20 +133,11 @@ iter_reconst_fun <- function(cov_la_mat,
   ## extract data:
   grid.len <- length(domain_grid)
   
-  ## For later use:
-  UpperFront_Fun  = NULL
   
   
   ## Checks #############################################################
   if(grid.len * fraction < K+1){stop("'fraction' too small.")}
   
-  if(!is.null(UpperFront_Fun)){
-    ## Remove too large 'U_sm_i' values
-    while(UpperFront_Fun(U_sm_i[1]) <  U_sm_i[length(U_sm_i)]){
-      U_sm_i      <- U_sm_i[-1]
-      Y_cent_sm_i <- Y_cent_sm_i[-1]
-    }
-  }
   
   ## ####################################################################
   ## First Run

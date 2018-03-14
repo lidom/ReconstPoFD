@@ -193,21 +193,21 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
                            each = nrow(Y_expd_mat)))
   
   ## Normal #############################################################################
-  FPCA_norm_obj <- FPCA(Ly    = Y_norm_list, 
-                        Lt    = U_list, 
-                        optns = list(
-                          "dataType"      = "Sparse", 
-                          "kernel"        = "gauss",
-                          "error"         = TRUE,
-                          "nRegGrid"      = nRegGrid))
+  FPCA_norm_obj <- fdapace::FPCA(Ly    = Y_norm_list, 
+                                 Lt    = U_list, 
+                                 optns = list(
+                                   "dataType"      = "Sparse", 
+                                   "kernel"        = "gauss",
+                                   "error"         = TRUE,
+                                   "nRegGrid"      = nRegGrid))
   ## Expdist ############################################################################
-  FPCA_expd_obj <- FPCA(Ly     = Y_expd_list, 
-                        Lt     = U_list, 
-                        optns = list(
-                          "dataType"      = "Sparse", 
-                          "kernel"        = "gauss",
-                          "error"         = TRUE,
-                          "nRegGrid"      = nRegGrid))
+  FPCA_expd_obj <- fdapace::FPCA(Ly     = Y_expd_list, 
+                                 Lt     = U_list, 
+                                 optns = list(
+                                   "dataType"      = "Sparse", 
+                                   "kernel"        = "gauss",
+                                   "error"         = TRUE,
+                                   "nRegGrid"      = nRegGrid))
   ## 
   cov_norm_la_mat     <- FPCA_norm_obj$smoothedCov
   cov_expd_la_mat     <- FPCA_expd_obj$smoothedCov
@@ -296,16 +296,16 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
       lo.half          <- 1:floor(length(U_sm_i)/2)
       up.half          <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
       ##
-      List.norm    <- reconst_fun(cov_la_mat     = cov_norm_la_mat, 
-                                      domain_grid    = grid_la_vec, 
-                                      Y_cent_sm_i    = Y_cent_sm.norm_i[lo.half], 
-                                      U_sm_i         = U_sm_i[lo.half], 
-                                      K              = K)
-      List.expd    <- reconst_fun(cov_la_mat     = cov_expd_la_mat, 
-                                      domain_grid    = grid_la_vec, 
-                                      Y_cent_sm_i    = Y_cent_sm.expd_i[lo.half], 
-                                      U_sm_i         = U_sm_i[lo.half], 
-                                      K              = K)
+      List.norm    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_norm_la_mat, 
+                                               domain_grid    = grid_la_vec, 
+                                               Y_cent_sm_i    = Y_cent_sm.norm_i[lo.half], 
+                                               U_sm_i         = U_sm_i[lo.half], 
+                                               K              = K)
+      List.expd    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_expd_la_mat, 
+                                               domain_grid    = grid_la_vec, 
+                                               Y_cent_sm_i    = Y_cent_sm.expd_i[lo.half], 
+                                               U_sm_i         = U_sm_i[lo.half], 
+                                               K              = K)
       ##
       y.norm.fit  <- List.norm[['y_reconst']] + mu_norm_est_fun(List.norm[['x_reconst']])
       y.expd.fit  <- List.expd[['y_reconst']] + mu_norm_est_fun(List.expd[['x_reconst']])
@@ -347,17 +347,17 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
   MaxAE_norm_vec     <- rep(NA, n)
   MaxAE_expd_vec     <- rep(NA, n)
   for(i in 1:n){
-    tmp.norm  <- reconst_fun(cov_la_mat  = cov_norm_la_mat, 
-                             domain_grid = grid_la_vec, 
-                             Y_cent_sm_i = c(na.omit(Y.c.align.norm.mat[,i])), 
-                             U_sm_i      = c(na.omit(U.align.mat[,i])), 
-                             K           = K.norm)
+    tmp.norm  <- ReconstPoFD::reconst_fun(cov_la_mat  = cov_norm_la_mat, 
+                                          domain_grid = grid_la_vec, 
+                                          Y_cent_sm_i = c(na.omit(Y.c.align.norm.mat[,i])), 
+                                          U_sm_i      = c(na.omit(U.align.mat[,i])), 
+                                          K           = K.norm)
     
-    tmp.expd  <- reconst_fun(cov_la_mat  = cov_expd_la_mat, 
-                             domain_grid = grid_la_vec, 
-                             Y_cent_sm_i = c(na.omit(Y.c.align.expd.mat[,i])), 
-                             U_sm_i      = c(na.omit(U.align.mat[,i])), 
-                             K           = K.expd)
+    tmp.expd  <- ReconstPoFD::reconst_fun(cov_la_mat  = cov_expd_la_mat, 
+                                          domain_grid = grid_la_vec, 
+                                          Y_cent_sm_i = c(na.omit(Y.c.align.expd.mat[,i])), 
+                                          U_sm_i      = c(na.omit(U.align.mat[,i])), 
+                                          K           = K.expd)
     
     x_algo <- tmp.norm[['x_reconst']]
     y_algo <- tmp.norm[['y_reconst']]

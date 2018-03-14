@@ -46,7 +46,7 @@ lambda5  <- 0#
 lambda6  <- 0#
 ## 
 lam_vec <- c(lambda1,lambda2,lambda3,lambda4,lambda5,lambda6)
-(K_irue  <- length(lam_vec[lam_vec>0]))
+(K_true  <- length(lam_vec[lam_vec>0]))
 ##
 eps_var  <- .20
 ## ##################################

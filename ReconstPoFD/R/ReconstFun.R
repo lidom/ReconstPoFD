@@ -57,7 +57,7 @@ reconst_fun <- function(
     evec_sm_compl_at_sm_i[,k]  <- stats::spline(y=evec_sm_compl[,k], x=grid_sm_compl_vec, xout = U_sm_i)$y
   }
   ## 'Small' PC-scores (OLS-approach)
-  xi_sm_i         <- unname(c(stats::lm(c(na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
+  xi_sm_i         <- unname(c(stats::lm(c(stats::na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
   ## Refitting (only of effect in the more noisy first run)
   Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
   xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
@@ -123,7 +123,7 @@ iter_reconst_fun <- function(cov_la_mat,
   # t             <- c(82,198, 158)[3]
   # cov_la_mat    <- CV.mat.RE
   # domain_grid   <- x.grid.vec.RE
-  # Y_cent_sm_i   <- c(na.omit(Y.s.pred.mat[,t]))
+  # Y_cent_sm_i   <- c(stats::na.omit(Y.s.pred.mat[,t]))
   # U_sm_i        <- x.grid.vec.RE[!is.na(Y.s.pred.mat[,t])]
   # K             <- 2
   # fraction      <- 0.2
@@ -393,4 +393,77 @@ iter_reconst_fun <- function(cov_la_mat,
   }
   return(list("y_reconst"=Y_cent_la_i,
               "x_reconst"=U_la_i))
+}
+
+
+#' AIC-based Selection of the Number of Eigenfunctions 
+#'
+#' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
+#' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
+#' 
+#' @param Ly_cent     List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}
+#' @param Lx          List of Y-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
+#' @param domain_grid Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
+#' @param K_max       Maximum K (truncation parameter)
+#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @export K_aic_fun
+K_aic_fun <- function(Ly_cent, 
+                      Lx,
+                      cov_la_mat,
+                      domain_grid,
+                      K_max      = 4,
+                      pre_smooth = FALSE)
+{
+  n <- length(Ly_cent)
+  ## #########################################################
+  ## Nonparametric variance estimation 
+  ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
+  ## #########################################################
+  sig2_GSJ_eps_vec <- NULL
+  for(i in 1:n){
+    y.vec <- c(stats::na.omit(Ly_cent[[i]]))
+    x.vec <- c(stats::na.omit(Lx[[i]]))
+    ##
+    a.seq      <- (diff(x.vec, lag=1)[-1]/diff(x.vec, lag=2))
+    b.seq      <- (diff(x.vec, lag=1)[-length(diff(x.vec, lag=1))]/diff(x.vec, lag=2))
+    c.sq       <- 1/(a.seq^2+b.seq^2+1)
+    ##
+    pseudo.eps <- a.seq * y.vec[-c( length(y.vec)-1,  length(y.vec))] + b.seq * y.vec[-c(1,2)] - y.vec[-c(1,length(y.vec))]
+    sig2.GSJ   <- mean(c(pseudo.eps^2*c.sq))
+    sig2_GSJ_eps_vec <- c(sig2_GSJ_eps_vec, sig2.GSJ)
+  }
+  sig2_GSJ_eps  <- mean(sig2_GSJ_eps_vec)
+  
+  
+  ## ############################
+  ## Selecting K via AIC 
+  ## ############################
+  AIC.vec <- rep(NA,K_max)
+  ##
+  for(K in 1:K_max){
+    RSS.vec <- rep(NA,n)
+    L.vec   <- rep(NA,n)
+    for(i in 1:n){ 
+      Y_cent_sm_i <- c(stats::na.omit(Ly_cent[[i]]))
+      U_sm_i      <- c(stats::na.omit(Lx[[i]]))
+      lo.half     <- 1:floor(length(U_sm_i)/2)
+      up.half     <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
+      ##
+      List_obj    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_la_mat, 
+                                              domain_grid    = domain_grid, 
+                                              Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
+                                              U_sm_i         = U_sm_i[lo.half], 
+                                              K              = K,
+                                              pre_smooth     = pre_smooth)
+      ##
+      y_fit      <- List_obj[['y_reconst']] #+ mu_est_fun(List_obj[['x_reconst']])
+      ## RSS.vec[i] <- sum((y_fit[!is.na(Lx[[i]])][up.half] - (Y_cent_sm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
+      RSS.vec[i] <- sum((y_fit[!is.na(Lx[[i]])][up.half] - Y_cent_sm_i[up.half] )^2)
+      L.vec[i]   <- -(n*log(2*pi)/2)-(n*log(sig2_GSJ_eps)/2)-(RSS.vec[i]/(2*sig2_GSJ_eps))
+    }
+    AIC.vec[K] <- -sum(L.vec) + K 
+  }
+  K.AIC <- which.min(AIC.vec)
+  return(K.AIC)
 }

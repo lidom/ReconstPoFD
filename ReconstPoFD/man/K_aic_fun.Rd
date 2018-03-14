@@ -4,17 +4,16 @@
 \alias{K_aic_fun}
 \title{AIC-based Selection of the Number of Eigenfunctions}
 \usage{
-K_aic_fun(Ly_cent, Lx, cov_la_mat, domain_grid, K_max = 4,
-  pre_smooth = FALSE)
+K_aic_fun(Ly_cent, Lu, cov_la_mat, workGrid, K_max = 4, pre_smooth = FALSE)
 }
 \arguments{
 \item{Ly_cent}{List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}}
 
-\item{Lx}{List of Y-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}}
+\item{Lu}{List of U-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}}
 
 \item{cov_la_mat}{Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}}
 
-\item{domain_grid}{Equidistant discretization grid in \eqn{[a,b]}{[a,b]}}
+\item{workGrid}{Equidistant discretization grid in \eqn{[a,b]}{[a,b]}}
 
 \item{K_max}{Maximum K (truncation parameter)}
 

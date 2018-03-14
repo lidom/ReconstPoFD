@@ -2,15 +2,14 @@
 % Please edit documentation in R/ReconstFun.R
 \name{reconst_fun}
 \alias{reconst_fun}
-\title{Reconstruction Function}
+\title{Reconstruct a single partially observed centered function}
 \usage{
-reconst_fun(cov_la_mat, domain_grid, Y_cent_sm_i, U_sm_i, K,
-  pre_smooth = FALSE)
+reconst_fun(cov_la_mat, workGrid, Y_cent_sm_i, U_sm_i, K, pre_smooth = FALSE)
 }
 \arguments{
 \item{cov_la_mat}{Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}}
 
-\item{domain_grid}{Equidistant discretization grid in \eqn{[a,b]}{[a,b]}}
+\item{workGrid}{Equidistant discretization grid in \eqn{[a,b]}{[a,b]}}
 
 \item{Y_cent_sm_i}{Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},}
 

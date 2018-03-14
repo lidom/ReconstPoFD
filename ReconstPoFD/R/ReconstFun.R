@@ -1,16 +1,118 @@
-#' Reconstruction Function
+#' Reconstruct partially observed functions
+#'
+#' This function allows you to reconstruct the missing parts of a function given the observed parts.
+#' @param Ly          List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}
+#' @param Lu          List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+#' @param K           Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
+#' @param K_max       Maximum K (used in the AIC-type criterion)
+#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid' (needed for the fdapace::FPCA() function). 
+#' @export reconstruct
+reconstruct <- function(Ly,
+                        Lu,
+                        K          = NULL,
+                        K_max      = 4,
+                        pre_smooth = FALSE,
+                        nRegGrid   = 101)
+{
+  n <- length(Ly)
+  
+  ## Estimate Mean and Covariance 
+  fdapace_obj <- fdapace::FPCA(Ly    = Ly, 
+                               Lt    = Lu, 
+                               optns = list(
+                                 "dataType"      = "Sparse", 
+                                 "kernel"        = "gauss",
+                                 "error"         = TRUE,
+                                 "nRegGrid"      = nRegGrid))
+  ## Regular grid
+  workGrid        <- fdapace_obj$workGrid
+  ## Covariance
+  cov_est_mat     <- fdapace_obj$smoothedCov
+  ## Mean
+  mu_est_fun      <- stats::splinefun(y= fdapace_obj$mu, x=workGrid)
+  
+  ## Centering the data ###############################################
+  Ly_cent <- vector("list", n)
+  for(i in 1:n){
+    Ly_cent[[i]] <- Ly[[i]] - mu_est_fun(Lu[[i]])
+  }
+  
+  ## Aligning Y_cent and U according to 'workGrid' ########################
+  Y_cent_align_mat  <- matrix(data = NA, nrow = nRegGrid, ncol = n)
+  U_align_mat       <- matrix(data = NA, nrow = nRegGrid, ncol = n)
+  for(i in 1:n){
+    Y_c_tmp    <- c(stats::na.omit(Ly_cent[[i]]))
+    U_tmp      <- c(stats::na.omit(Lu[[i]]))
+    for(j in 1:length(U_tmp)){
+      loc                     <- order(abs(workGrid - U_tmp[j]))[1]
+      Y_cent_align_mat[loc,i] <- Y_c_tmp[j]
+    }
+    na_loc                  <- is.na(Y_cent_align_mat[,i])
+    U_align_mat[!na_loc,i]  <- workGrid[!na_loc]       
+  }
+  
+  ## From matrix to list:
+  Ly_cent_align <- split(Y_cent_align_mat, rep(1:n, each = nRegGrid))
+  Lu_align      <- split(U_align_mat,      rep(1:n, each = nRegGrid))
+  
+  ## K AIC
+  if(is.null(K)){
+    K.AIC <- K_aic_fun(Ly_cent     = Ly_cent_align, 
+                                     Lu          = Lu_align,
+                                     cov_la_mat  = cov_est_mat,
+                                     workGrid    = workGrid,
+                                     K_max       = K_max)
+    K <- K.AIC
+  }
+  
+  ## Re-Fitted Covariance:
+  if(K>1){
+    cov_est_mat <- fdapace_obj$phi[,1:K,drop=FALSE] %*% diag(fdapace_obj$lambda[1:K]) %*%  t(fdapace_obj$phi[,1:K,drop=FALSE])
+  }
+  if(K==1){
+    cov_est_mat <- fdapace_obj$phi[,1:K,drop=FALSE]  %*%  t(fdapace_obj$phi[,1:K,drop=FALSE]) * fdapace_obj$lambda[1:K]
+  }
+  
+  ## Reconstructing all functions
+  y_reconst_list  <- vector("list", n)
+  x_reconst_list  <- vector("list", n)
+  ##
+  for(i in 1:n){
+    tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
+                                      workGrid    = workGrid, 
+                                      Y_cent_sm_i = c(stats::na.omit(Y_cent_align_mat[,i])), 
+                                      U_sm_i      = c(stats::na.omit(U_align_mat[,i])), 
+                                      K           = K, 
+                                      pre_smooth  = pre_smooth)
+    
+    x_tmp      <- tmp[['x_reconst']]
+    y_cent_tmp <- tmp[['y_reconst']]
+    y_tmp      <- y_cent_tmp + mu_est_fun(x_tmp)
+    ##
+    y_reconst_list[[i]]  <- y_tmp
+    x_reconst_list[[i]]  <- x_tmp
+  }
+  ##
+  return(list(
+    "y_reconst_list"  = y_reconst_list,
+    "x_reconst_list"  = x_reconst_list,
+    "fdapace_obj"     = fdapace_obj))
+}
+
+
+#' Reconstruct a single partially observed centered function
 #'
 #' This function allows you to reconstruct the missing parts of a function given the observed parts.
 #' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param domain_grid Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
+#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
 #' @param Y_cent_sm_i Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},
 #' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
 #' @param K           Truncation parameter
 #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @export reconst_fun
 reconst_fun <- function(
   cov_la_mat,     
-  domain_grid,    
+  workGrid,    
   Y_cent_sm_i,    
   U_sm_i,         
   K,              
@@ -20,9 +122,9 @@ reconst_fun <- function(
 ){
   
   ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
-  sm_compl_gridloc        <- domain_grid>=min(U_sm_i, na.rm = TRUE) & domain_grid<=max(U_sm_i, na.rm = TRUE)
+  sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
   cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
-  grid_sm_compl_vec       <- domain_grid[sm_compl_gridloc]
+  grid_sm_compl_vec       <- workGrid[sm_compl_gridloc]
   ##
   if(pre_smooth==TRUE){
     smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
@@ -45,7 +147,7 @@ reconst_fun <- function(
   }
   ## #################################################
   ## 'Extrapolated/Reconstructive' eigenfunctions
-  ela_reconst    <- matrix(NA, nrow=length(domain_grid), ncol=K)
+  ela_reconst    <- matrix(NA, nrow=length(workGrid), ncol=K)
   for(k in 1:K){
     ela_reconst[,k] <- c(evec_sm_compl[,k] %*% cov_la_mat[sm_compl_gridloc,,drop=FALSE])
   }
@@ -63,19 +165,19 @@ reconst_fun <- function(
   xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
   ##
   ## Recovering: ###########################
-  reconst_ls_vec    <- rep(0, length(domain_grid))
+  reconst_ls_vec    <- rep(0, length(workGrid))
   for(k in 1:K){
     reconst_ls_vec    <- c(reconst_ls_vec + c((xi_sm_i[k]/eval_sm_compl[k]) * ela_reconst[,k]))
   }
   y_reconst_vec <- reconst_ls_vec[!is.na(reconst_ls_vec)]
-  x_reconst_vec <- domain_grid[!is.na(reconst_ls_vec)]
+  x_reconst_vec <- workGrid[!is.na(reconst_ls_vec)]
   if(pre_smooth==TRUE){
     ## Aliment with observed part 'Y_cent_sm_compl_fit_i':
-    sm.gr.loc                       <- c(1:length(domain_grid))[sm_compl_gridloc]
+    sm.gr.loc                       <- c(1:length(workGrid))[sm_compl_gridloc]
     ## lower marginal point
     y_reconst_vec[1:min(sm.gr.loc)] <- y_reconst_vec[1:min(sm.gr.loc)] + Y_cent_sm_compl_fit_i[1] - y_reconst_vec[min(sm.gr.loc)]
     ## upper marginal point
-    y_reconst_vec[max(sm.gr.loc):length(domain_grid)] <- y_reconst_vec[max(sm.gr.loc):length(domain_grid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
+    y_reconst_vec[max(sm.gr.loc):length(workGrid)] <- y_reconst_vec[max(sm.gr.loc):length(workGrid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
     ## estimated ('observed') part
     y_reconst_vec[sm.gr.loc]                          <- Y_cent_sm_compl_fit_i
   }
@@ -85,15 +187,84 @@ reconst_fun <- function(
   ## ######################
 }
 
+#' AIC-based Selection of the Number of Eigenfunctions 
+#'
+#' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
+#' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
+#' 
+#' @param Ly_cent     List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}
+#' @param Lu          List of U-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
+#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
+#' @param K_max       Maximum K (truncation parameter)
+#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+K_aic_fun <- function(Ly_cent, 
+                      Lu,
+                      cov_la_mat,
+                      workGrid,
+                      K_max      = 4,
+                      pre_smooth = FALSE)
+{
+  n <- length(Ly_cent)
+  ## #########################################################
+  ## Nonparametric variance estimation 
+  ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
+  ## #########################################################
+  sig2_GSJ_eps_vec <- NULL
+  for(i in 1:n){
+    y.vec <- c(stats::na.omit(Ly_cent[[i]]))
+    x.vec <- c(stats::na.omit(Lu[[i]]))
+    ##
+    a.seq      <- (diff(x.vec, lag=1)[-1]/diff(x.vec, lag=2))
+    b.seq      <- (diff(x.vec, lag=1)[-length(diff(x.vec, lag=1))]/diff(x.vec, lag=2))
+    c.sq       <- 1/(a.seq^2+b.seq^2+1)
+    ##
+    pseudo.eps <- a.seq * y.vec[-c( length(y.vec)-1,  length(y.vec))] + b.seq * y.vec[-c(1,2)] - y.vec[-c(1,length(y.vec))]
+    sig2.GSJ   <- mean(c(pseudo.eps^2*c.sq))
+    sig2_GSJ_eps_vec <- c(sig2_GSJ_eps_vec, sig2.GSJ)
+  }
+  sig2_GSJ_eps  <- mean(sig2_GSJ_eps_vec)
+  
+  
+  ## ############################
+  ## Selecting K via AIC 
+  ## ############################
+  AIC.vec <- rep(NA,K_max)
+  ##
+  for(K in 1:K_max){
+    RSS.vec <- rep(NA,n)
+    L.vec   <- rep(NA,n)
+    for(i in 1:n){ 
+      Y_cent_sm_i <- c(stats::na.omit(Ly_cent[[i]]))
+      U_sm_i      <- c(stats::na.omit(Lu[[i]]))
+      lo.half     <- 1:floor(length(U_sm_i)/2)
+      up.half     <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
+      ##
+      List_obj    <- reconst_fun(cov_la_mat     = cov_la_mat, 
+                                              workGrid       = workGrid, 
+                                              Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
+                                              U_sm_i         = U_sm_i[lo.half], 
+                                              K              = K,
+                                              pre_smooth     = pre_smooth)
+      ##
+      y_fit      <- List_obj[['y_reconst']] #+ mu_est_fun(List_obj[['x_reconst']])
+      ## RSS.vec[i] <- sum((y_fit[!is.na(Lu[[i]])][up.half] - (Y_cent_sm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
+      RSS.vec[i] <- sum((y_fit[!is.na(Lu[[i]])][up.half] - Y_cent_sm_i[up.half] )^2)
+      L.vec[i]   <- -(n*log(2*pi)/2)-(n*log(sig2_GSJ_eps)/2)-(RSS.vec[i]/(2*sig2_GSJ_eps))
+    }
+    AIC.vec[K] <- -sum(L.vec) + K 
+  }
+  K.AIC <- which.min(AIC.vec)
+  return(K.AIC)
+}
 
-
-#' Iterative Reconstruction Algoritm 
+#' Iterative Reconstruction Algoritm
 #'
 #' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
 #' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
 #' 
 #' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param domain_grid Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
+#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
 #' @param Y_cent_sm_i Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},
 #' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
 #' @param K           Truncation parameter
@@ -107,10 +278,9 @@ reconst_fun <- function(
 #' The lengths of the upper and lower fragments are determined by the argument 'fraction'. 
 #' Large values of 'fraction' lead to large (i.e., more informative) fragments which can improve the reconstructions, but will not allow to reconstruct large missing parts. 
 #' Small values of 'fraction' lead to small (i.e., less informative) fragments which can worsen the reconstructions, but will allow to reconstruct large missing parts. 
-
 #' @export iter_reconst_fun
 iter_reconst_fun <- function(cov_la_mat, 
-                             domain_grid, 
+                             workGrid, 
                              Y_cent_sm_i, 
                              U_sm_i, 
                              K, 
@@ -119,21 +289,9 @@ iter_reconst_fun <- function(cov_la_mat,
                              pre_smooth = FALSE,
                              messages   = FALSE
 ){
-  ## ###########################################################
-  # t             <- c(82,198, 158)[3]
-  # cov_la_mat    <- CV.mat.RE
-  # domain_grid   <- x.grid.vec.RE
-  # Y_cent_sm_i   <- c(stats::na.omit(Y.s.pred.mat[,t]))
-  # U_sm_i        <- x.grid.vec.RE[!is.na(Y.s.pred.mat[,t])]
-  # K             <- 2
-  # fraction      <- 0.2
-  # max_rep       <- 5
-  ## ###########################################################
   
   ## extract data:
-  grid.len <- length(domain_grid)
-  
-  
+  grid.len <- length(workGrid)
   
   ## Checks #############################################################
   if(grid.len * fraction < K+1){stop("'fraction' too small.")}
@@ -141,9 +299,8 @@ iter_reconst_fun <- function(cov_la_mat,
   
   ## ####################################################################
   ## First Run
-  ##
-  pred.tmp     <- ReconstPoFD::reconst_fun(cov_la_mat      = cov_la_mat, 
-                                           domain_grid     = domain_grid, 
+  pred.tmp     <- reconst_fun(cov_la_mat      = cov_la_mat, 
+                                           workGrid        = workGrid, 
                                            Y_cent_sm_i     = Y_cent_sm_i, 
                                            U_sm_i          = U_sm_i, 
                                            K               = K)
@@ -151,20 +308,20 @@ iter_reconst_fun <- function(cov_la_mat,
   U_la_i      <- pred.tmp[['x_reconst']]
   Y_cent_la_i <- pred.tmp[['y_reconst']]
   ##  check-plot:
-  # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(domain_grid), type="l"); abline(v=range(domain_grid))
+  # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(workGrid), type="l"); abline(v=range(workGrid))
   
   ## ####################################################################
   ## Do we need to predict a further missing *upper* fragment?
   ## ####################################################################
-  if(max(U_la_i) !=  max(domain_grid)){
+  if(max(U_la_i) !=  max(workGrid)){
     ## Find the first domain value at which the there is no missing cov-value anymore with 
     ## respect to the largest domain values, i.e., 'cov_la_mat[,grid.len]' (could be done outside of the loop!)
     min.loc         <- which.min(cov_la_mat[,grid.len])
     ##
-    ## Is the predicted function already (sufficiently far) beyond 'domain_grid[min.loc]'?
+    ## Is the predicted function already (sufficiently far) beyond 'workGrid[min.loc]'?
     ## ('Sufficiently far' >= 'grid.len * fraction' grid points)
-    check <- max(U_la_i) > (domain_grid[min.loc]) & 
-      length(domain_grid[domain_grid >= domain_grid[min.loc] & domain_grid <= max(U_la_i)]) >= (grid.len * fraction)
+    check <- max(U_la_i) > (workGrid[min.loc]) & 
+      length(workGrid[workGrid >= workGrid[min.loc] & workGrid <= max(U_la_i)]) >= (grid.len * fraction)
     stop.pred <- FALSE  # initialization
     if(check == FALSE){
       go    <- TRUE
@@ -173,8 +330,8 @@ iter_reconst_fun <- function(cov_la_mat,
       while(go){ # print("In while loop for upper pred.")
         ## Select new small intervall: 
         ## [(max(U_la_i) - c(max(U_la_i)-min(U_la_i))*fraction),  max(U_la_i)]
-        U_slct_sm2_vec  <- domain_grid <= max(U_la_i) &  domain_grid >= (max(U_la_i) - c(max(U_la_i)-min(U_la_i))*fraction)
-        U_sm2_i         <- domain_grid[U_slct_sm2_vec]
+        U_slct_sm2_vec  <- workGrid <= max(U_la_i) &  workGrid >= (max(U_la_i) - c(max(U_la_i)-min(U_la_i))*fraction)
+        U_sm2_i         <- workGrid[U_slct_sm2_vec]
         ##
         ## Is the new small interval large enough?
         if(length(U_sm2_i) >= grid.len * fraction){
@@ -182,8 +339,8 @@ iter_reconst_fun <- function(cov_la_mat,
           Y_slct_sm2_vec  <- U_la_i >= min(U_sm2_i) & U_la_i <= max(U_sm2_i)
           Y_cent_sm2_i    <- Y_cent_la_i[Y_slct_sm2_vec]  
           ##
-          pred2.tmp    <- ReconstPoFD::reconst_fun(cov_la_mat      = cov_la_mat, 
-                                                   domain_grid     = domain_grid, 
+          pred2.tmp    <- reconst_fun(cov_la_mat      = cov_la_mat, 
+                                                   workGrid        = workGrid, 
                                                    Y_cent_sm_i     = Y_cent_sm2_i, 
                                                    U_sm_i          = U_sm2_i, 
                                                    K               = K)
@@ -194,7 +351,7 @@ iter_reconst_fun <- function(cov_la_mat,
           U_la2_fragm_i      <- U_la2_i[U_la2_i >= max(U_la_i)]
           Y_cent_la2_fragm_i <- Y_cent_la2_i[U_la2_i >= max(U_la_i)]
           ## check-plot:
-          # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(domain_grid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
+          # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(workGrid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
           # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, lty=2)
           # abline(h=c(Y_cent_la_i[length(Y_cent_la_i)], Y_cent_la2_fragm_i[1]), col=c("red", "black"))
           ##
@@ -205,13 +362,13 @@ iter_reconst_fun <- function(cov_la_mat,
           U_la_i             <- c(U_la_i,       U_la2_fragm_i[-1])
           Y_cent_la_i        <- c(Y_cent_la_i,  Y_cent_la2_fragm_i[-1])
           ## check-plot:
-          # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(domain_grid), type="l")
+          # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(workGrid), type="l")
           # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, col="red")
           
           ## Check again:
-          ## Is the predicted function now (sufficiently far) beyond 'domain_grid[min.loc]'?
-          check <- max(U_la_i) > (domain_grid[min.loc]) & 
-            length(domain_grid[domain_grid >= domain_grid[min.loc] & domain_grid <= max(U_la_i)]) >= (grid.len * fraction)
+          ## Is the predicted function now (sufficiently far) beyond 'workGrid[min.loc]'?
+          check <- max(U_la_i) > (workGrid[min.loc]) & 
+            length(workGrid[workGrid >= workGrid[min.loc] & workGrid <= max(U_la_i)]) >= (grid.len * fraction)
           ## 
           go    <- ifelse(check, yes = FALSE, no = TRUE)
           count <- count + 1
@@ -235,18 +392,18 @@ iter_reconst_fun <- function(cov_la_mat,
       }
     }
     ##
-    ## Is the predicted function already (sufficiently far) beyond 'domain_grid[min.loc]'?
+    ## Is the predicted function already (sufficiently far) beyond 'workGrid[min.loc]'?
     ## ('Sufficiently far' >= '('grid.len * fraction' grid points)  
     if(check == TRUE & stop.pred==FALSE){ 
       ## If yes, we can achieve a complete prediction of the missing upper fragments! 
       ##
-      U_slct_sm2_vec  <- domain_grid >= domain_grid[min.loc] & domain_grid <= max(U_la_i)
-      U_sm2_i         <- domain_grid[U_slct_sm2_vec]
+      U_slct_sm2_vec  <- workGrid >= workGrid[min.loc] & workGrid <= max(U_la_i)
+      U_sm2_i         <- workGrid[U_slct_sm2_vec]
       Y_slct_sm2_vec  <- U_la_i >= min(U_sm2_i) & U_la_i <= max(U_sm2_i)
       Y_cent_sm2_i    <- Y_cent_la_i[Y_slct_sm2_vec]  
       ##
-      pred2.tmp    <- ReconstPoFD::reconst_fun(cov_la_mat      = cov_la_mat, 
-                                               domain_grid     = domain_grid, 
+      pred2.tmp    <- reconst_fun(cov_la_mat      = cov_la_mat, 
+                                               workGrid     = workGrid, 
                                                Y_cent_sm_i     = Y_cent_sm2_i, 
                                                U_sm_i          = U_sm2_i, 
                                                K               = K)
@@ -257,7 +414,7 @@ iter_reconst_fun <- function(cov_la_mat,
       U_la2_fragm_i      <- U_la2_i[U_la2_i >= max(U_la_i)]
       Y_cent_la2_fragm_i <- Y_cent_la2_i[U_la2_i >= max(U_la_i)]
       ## check-plot:
-      # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(domain_grid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
+      # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(workGrid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
       # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, lty=2)
       # abline(h=c(Y_cent_la_i[length(Y_cent_la_i)], Y_cent_la2_fragm_i[1]), col=c("red", "black"))
       ##
@@ -268,22 +425,22 @@ iter_reconst_fun <- function(cov_la_mat,
       U_la_i             <- c(U_la_i,       U_la2_fragm_i[-1])
       Y_cent_la_i        <- c(Y_cent_la_i,  Y_cent_la2_fragm_i[-1])
       ## check-plot:
-      # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(domain_grid), type="l")
+      # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(workGrid), type="l")
       # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, col="red")
     }
   }
   ## ################################################################################
   ## Do we need to predict a further missing *lower* fragement?
   ## ################################################################################
-  if(min(U_la_i) !=  min(domain_grid)){
+  if(min(U_la_i) !=  min(workGrid)){
     ## Find the last domain value at which the there is still no missing cov-value with 
     ## respect to the smallest domain value, i.e., 'cov_la_mat[,1]' (could be done outside of the loop!)
     max.loc         <- which.max(cov_la_mat[,1])
     ##
-    ## Is the predicted function already (sufficiently far) below 'domain_grid[max.loc]'?
+    ## Is the predicted function already (sufficiently far) below 'workGrid[max.loc]'?
     ## ('Sufficiently far' >= 'grid.len * fraction' grid points)
-    check <- min(U_la_i) < (domain_grid[max.loc]) & 
-      length(domain_grid[domain_grid <= domain_grid[max.loc] & domain_grid >= min(U_la_i)]) >= (grid.len * fraction)
+    check <- min(U_la_i) < (workGrid[max.loc]) & 
+      length(workGrid[workGrid <= workGrid[max.loc] & workGrid >= min(U_la_i)]) >= (grid.len * fraction)
     stop.pred <- FALSE
     if(check == FALSE){
       go    <- TRUE
@@ -292,8 +449,8 @@ iter_reconst_fun <- function(cov_la_mat,
       while(go){ # print("In while loop for lower pred.")
         ## Select new small intervall: 
         ## [min(U_la_i), (min(U_la_i) + c(max(U_la_i)-min(U_la_i))*fraction)]
-        U_slct_sm2_vec  <- domain_grid >= min(U_la_i) &  domain_grid <= (min(U_la_i) + c(max(U_la_i)-min(U_la_i))*fraction)
-        U_sm2_i         <- domain_grid[U_slct_sm2_vec]
+        U_slct_sm2_vec  <- workGrid >= min(U_la_i) &  workGrid <= (min(U_la_i) + c(max(U_la_i)-min(U_la_i))*fraction)
+        U_sm2_i         <- workGrid[U_slct_sm2_vec]
         ##
         ## Is the new small interval large enough?
         if(length(U_sm2_i) >= grid.len * fraction){ 
@@ -301,8 +458,8 @@ iter_reconst_fun <- function(cov_la_mat,
           Y_slct_sm2_vec  <- U_la_i >= min(U_sm2_i) & U_la_i <= max(U_sm2_i)
           Y_cent_sm2_i    <- Y_cent_la_i[Y_slct_sm2_vec]  
           ##
-          pred2.tmp    <- ReconstPoFD::reconst_fun(cov_la_mat      = cov_la_mat, 
-                                                   domain_grid     = domain_grid, 
+          pred2.tmp    <- reconst_fun(cov_la_mat      = cov_la_mat, 
+                                                   workGrid        = workGrid, 
                                                    Y_cent_sm_i     = Y_cent_sm2_i, 
                                                    U_sm_i          = U_sm2_i, 
                                                    K               = K)
@@ -313,7 +470,7 @@ iter_reconst_fun <- function(cov_la_mat,
           U_la2_fragm_i      <- U_la2_i[U_la2_i <= min(U_la_i)]
           Y_cent_la2_fragm_i <- Y_cent_la2_i[U_la2_i <= min(U_la_i)]
           ## check-plot:
-          # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(domain_grid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
+          # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(workGrid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
           # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, lty=2)
           # abline(h=c(Y_cent_la_i[1], Y_cent_la2_fragm_i[length(Y_cent_la2_fragm_i)]), col=c("red", "black"))
           ##
@@ -324,13 +481,13 @@ iter_reconst_fun <- function(cov_la_mat,
           U_la_i             <- c(U_la2_fragm_i[-length(U_la2_fragm_i)],                U_la_i)
           Y_cent_la_i        <- c(Y_cent_la2_fragm_i[-length(Y_cent_la2_fragm_i)], Y_cent_la_i)
           ## check-plot:
-          # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(domain_grid), type="l")
+          # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(workGrid), type="l")
           # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, col="red")
           
           ## Check again:
-          ## Is the predicted function now (sufficiently far) below 'domain_grid[min.loc]'?
-          check <- min(U_la_i) < (domain_grid[max.loc]) & 
-            length(domain_grid[domain_grid <= domain_grid[max.loc] & domain_grid >= min(U_la_i)]) >= (grid.len * fraction)
+          ## Is the predicted function now (sufficiently far) below 'workGrid[min.loc]'?
+          check <- min(U_la_i) < (workGrid[max.loc]) & 
+            length(workGrid[workGrid <= workGrid[max.loc] & workGrid >= min(U_la_i)]) >= (grid.len * fraction)
           ## 
           go    <- ifelse(check, yes = FALSE, no = TRUE)
           count <- count + 1
@@ -354,18 +511,18 @@ iter_reconst_fun <- function(cov_la_mat,
       }
     }
     ##
-    ## Is the predicted function already (sufficiently far) below 'domain_grid[min.loc]'?
+    ## Is the predicted function already (sufficiently far) below 'workGrid[min.loc]'?
     ## ('Sufficiently far' >= '('grid.len * fraction' grid points)  
     if(check == TRUE & stop.pred==FALSE){ 
       ## If yes, we can achieve a complete prediction of the missing lower fragment! 
       ##
-      U_slct_sm2_vec  <- domain_grid <= domain_grid[max.loc] & domain_grid >= min(U_la_i)
-      U_sm2_i         <- domain_grid[U_slct_sm2_vec]
+      U_slct_sm2_vec  <- workGrid <= workGrid[max.loc] & workGrid >= min(U_la_i)
+      U_sm2_i         <- workGrid[U_slct_sm2_vec]
       Y_slct_sm2_vec  <- U_la_i >= min(U_sm2_i) & U_la_i <= max(U_sm2_i)
       Y_cent_sm2_i    <- Y_cent_la_i[Y_slct_sm2_vec]  
       ##
-      pred2.tmp    <- ReconstPoFD::reconst_fun(cov_la_mat      = cov_la_mat, 
-                                               domain_grid     = domain_grid, 
+      pred2.tmp    <- reconst_fun(cov_la_mat      = cov_la_mat, 
+                                               workGrid        = workGrid, 
                                                Y_cent_sm_i     = Y_cent_sm2_i, 
                                                U_sm_i          = U_sm2_i, 
                                                K               = K)
@@ -376,7 +533,7 @@ iter_reconst_fun <- function(cov_la_mat,
       U_la2_fragm_i      <- U_la2_i[U_la2_i <= min(U_la_i)]
       Y_cent_la2_fragm_i <- Y_cent_la2_i[U_la2_i <= min(U_la_i)]
       ## check-plot:
-      # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(domain_grid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
+      # plot(y=Y_cent_la_i, x=U_la_i, xlim=range(workGrid), ylim=range(Y_cent_la_i,Y_cent_la2_fragm_i), type="l")
       # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, lty=2)
       # abline(h=c(Y_cent_la_i[1], Y_cent_la2_fragm_i[length(Y_cent_la2_fragm_i)]), col=c("red", "black"))
       ##
@@ -387,83 +544,10 @@ iter_reconst_fun <- function(cov_la_mat,
       U_la_i             <- c(U_la2_fragm_i[-length(U_la2_fragm_i)], U_la_i)
       Y_cent_la_i        <- c(Y_cent_la2_fragm_i[-length(Y_cent_la2_fragm_i)], Y_cent_la_i)
       ## check-plot:
-      # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(domain_grid), type="l")
+      # plot(y=Y_cent_la_i,         x=U_la_i, xlim=range(workGrid), type="l")
       # lines(y=Y_cent_la2_fragm_i, x=U_la2_fragm_i, col="red")
     }
   }
   return(list("y_reconst"=Y_cent_la_i,
               "x_reconst"=U_la_i))
-}
-
-
-#' AIC-based Selection of the Number of Eigenfunctions 
-#'
-#' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
-#' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
-#' 
-#' @param Ly_cent     List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}
-#' @param Lx          List of Y-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param domain_grid Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
-#' @param K_max       Maximum K (truncation parameter)
-#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @export K_aic_fun
-K_aic_fun <- function(Ly_cent, 
-                      Lx,
-                      cov_la_mat,
-                      domain_grid,
-                      K_max      = 4,
-                      pre_smooth = FALSE)
-{
-  n <- length(Ly_cent)
-  ## #########################################################
-  ## Nonparametric variance estimation 
-  ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
-  ## #########################################################
-  sig2_GSJ_eps_vec <- NULL
-  for(i in 1:n){
-    y.vec <- c(stats::na.omit(Ly_cent[[i]]))
-    x.vec <- c(stats::na.omit(Lx[[i]]))
-    ##
-    a.seq      <- (diff(x.vec, lag=1)[-1]/diff(x.vec, lag=2))
-    b.seq      <- (diff(x.vec, lag=1)[-length(diff(x.vec, lag=1))]/diff(x.vec, lag=2))
-    c.sq       <- 1/(a.seq^2+b.seq^2+1)
-    ##
-    pseudo.eps <- a.seq * y.vec[-c( length(y.vec)-1,  length(y.vec))] + b.seq * y.vec[-c(1,2)] - y.vec[-c(1,length(y.vec))]
-    sig2.GSJ   <- mean(c(pseudo.eps^2*c.sq))
-    sig2_GSJ_eps_vec <- c(sig2_GSJ_eps_vec, sig2.GSJ)
-  }
-  sig2_GSJ_eps  <- mean(sig2_GSJ_eps_vec)
-  
-  
-  ## ############################
-  ## Selecting K via AIC 
-  ## ############################
-  AIC.vec <- rep(NA,K_max)
-  ##
-  for(K in 1:K_max){
-    RSS.vec <- rep(NA,n)
-    L.vec   <- rep(NA,n)
-    for(i in 1:n){ 
-      Y_cent_sm_i <- c(stats::na.omit(Ly_cent[[i]]))
-      U_sm_i      <- c(stats::na.omit(Lx[[i]]))
-      lo.half     <- 1:floor(length(U_sm_i)/2)
-      up.half     <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
-      ##
-      List_obj    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_la_mat, 
-                                              domain_grid    = domain_grid, 
-                                              Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
-                                              U_sm_i         = U_sm_i[lo.half], 
-                                              K              = K,
-                                              pre_smooth     = pre_smooth)
-      ##
-      y_fit      <- List_obj[['y_reconst']] #+ mu_est_fun(List_obj[['x_reconst']])
-      ## RSS.vec[i] <- sum((y_fit[!is.na(Lx[[i]])][up.half] - (Y_cent_sm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
-      RSS.vec[i] <- sum((y_fit[!is.na(Lx[[i]])][up.half] - Y_cent_sm_i[up.half] )^2)
-      L.vec[i]   <- -(n*log(2*pi)/2)-(n*log(sig2_GSJ_eps)/2)-(RSS.vec[i]/(2*sig2_GSJ_eps))
-    }
-    AIC.vec[K] <- -sum(L.vec) + K 
-  }
-  K.AIC <- which.min(AIC.vec)
-  return(K.AIC)
 }

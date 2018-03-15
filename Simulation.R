@@ -2,9 +2,8 @@
 library("devtools")
 # install_github("lidom/ReconstPoFD/ReconstPoFD")
 # install.packages("doParallel", "fdapace")
-library("ReconstPoFD")  # contains the function 'reconst_fun()'
+library("ReconstPoFD")  # contains the function 'reconstuct()'
 library("doParallel")   # parallel-looping
-library("fdapace")      # for estimating mean- and covariance-function
 
 
 ## #######################################
@@ -182,198 +181,41 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
   }
   ## ##############################################################
   ## From matrix to list:
-  U_list      <- split(U_mat, 
-                       rep(1:ncol(U_mat), 
-                           each = nrow(U_mat)))
-  Y_norm_list <- split(Y_norm_mat, 
-                       rep(1:ncol(Y_norm_mat), 
-                           each = nrow(Y_norm_mat)))
-  Y_expd_list <- split(Y_expd_mat, 
-                       rep(1:ncol(Y_expd_mat), 
-                           each = nrow(Y_expd_mat)))
+  U_list      <- split(U_mat,      rep(1:ncol(U_mat),      each = nrow(U_mat)))
+  Y_norm_list <- split(Y_norm_mat, rep(1:ncol(Y_norm_mat), each = nrow(Y_norm_mat)))
+  Y_expd_list <- split(Y_expd_mat, rep(1:ncol(Y_expd_mat), each = nrow(Y_expd_mat)))
   
-  ## Normal #############################################################################
-  FPCA_norm_obj <- fdapace::FPCA(Ly    = Y_norm_list, 
-                                 Lt    = U_list, 
-                                 optns = list(
-                                   "dataType"      = "Sparse", 
-                                   "kernel"        = "gauss",
-                                   "error"         = TRUE,
-                                   "nRegGrid"      = nRegGrid))
-  ## Expdist ############################################################################
-  FPCA_expd_obj <- fdapace::FPCA(Ly     = Y_expd_list, 
-                                 Lt     = U_list, 
-                                 optns = list(
-                                   "dataType"      = "Sparse", 
-                                   "kernel"        = "gauss",
-                                   "error"         = TRUE,
-                                   "nRegGrid"      = nRegGrid))
-  ## 
-  cov_norm_la_mat     <- FPCA_norm_obj$smoothedCov
-  cov_expd_la_mat     <- FPCA_expd_obj$smoothedCov
-  grid_la_vec         <- FPCA_norm_obj$workGrid
-  
-  
-  ## Centering the data ###############################################
-  mu_norm_est_fun <- splinefun(y= FPCA_norm_obj$mu, x=grid_la_vec)
-  mu_expd_est_fun <- splinefun(y= FPCA_expd_obj$mu, x=grid_la_vec)
-  ## 
-  Y_cent_norm_mat <- matrix(NA, m, n)
-  Y_cent_expd_mat <- matrix(NA, m, n)
-  for(i in 1:n){
-    Y_cent_norm_mat[,i]  <- Y_norm_mat[,i] - mu_norm_est_fun(U_mat[,i])
-    Y_cent_expd_mat[,i]  <- Y_expd_mat[,i] - mu_expd_est_fun(U_mat[,i])
-  }
-  ## ###################################################################
-  
-  ## Aligning Y_cent according to 'grid_la_vec' ########################
-  Y.c.align.norm.mat    <- matrix(NA, nRegGrid, n)
-  Y.c.align.expd.mat    <- matrix(NA, nRegGrid, n)
-  U.align.mat           <- matrix(NA, nRegGrid, n)
-  for(i in 1:n){
-    Y.c.norm.tmp    <- c(na.omit(Y_cent_norm_mat[,i]))
-    Y.c.expd.tmp    <- c(na.omit(Y_cent_expd_mat[,i]))
-    U.tmp           <- c(na.omit(U_mat[,i]))
-    for(j in 1:length(c(na.omit(U_mat[,i])))){
-      loc                        <- order(abs(grid_la_vec - U.tmp[j]))[1]
-      Y.c.align.norm.mat[loc,i]  <- Y.c.norm.tmp[j]
-      Y.c.align.expd.mat[loc,i]  <- Y.c.expd.tmp[j]
-    }
-    na.loc                  <- is.na(Y.c.align.norm.mat[,i])
-    U.align.mat[!na.loc,i]  <- grid_la_vec[!na.loc]       
-  }
-  ## ###################################################################
-  
-  
-  ## ############################## ############################## ############################
-  ## Selecting K
-  ## ############################## ############################## ############################
-  ## #########################################################
-  ## Nonparametric variance estimation 
-  ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
-  ## #########################################################
-  sig2.GSJ.eps.norm.vec <- NULL
-  sig2.GSJ.eps.expd.vec <- NULL
-  for(i in 1:n){
-    x.vec      <- c(na.omit(U.align.mat[,i]))
-    y.norm.vec <- c(na.omit(Y.c.align.norm.mat[,i]))
-    y.expd.vec <- c(na.omit(Y.c.align.expd.mat[,i]))
-    ##
-    a.seq             <- (diff(x.vec, lag=1)[-1]/diff(x.vec, lag=2))
-    b.seq             <- (diff(x.vec, lag=1)[-length(diff(x.vec, lag=1))]/diff(x.vec, lag=2))
-    c.sq              <- 1/(a.seq^2+b.seq^2+1)
-    ##
-    pseudo.norm.eps   <- a.seq * y.norm.vec[-c( length(y.norm.vec)-1,  length(y.norm.vec))] +
-      b.seq * y.norm.vec[-c(1,2)] - y.norm.vec[-c(1,length(y.norm.vec))]
-    pseudo.expd.eps   <- a.seq * y.expd.vec[-c( length(y.expd.vec)-1,  length(y.expd.vec))] +
-      b.seq * y.expd.vec[-c(1,2)] - y.expd.vec[-c(1,length(y.expd.vec))]
-    sig2.GSJ.norm     <- mean(c(pseudo.norm.eps^2*c.sq))
-    sig2.GSJ.expd     <- mean(c(pseudo.expd.eps^2*c.sq))
-    ##
-    sig2.GSJ.eps.norm.vec <- c(sig2.GSJ.eps.norm.vec, sig2.GSJ.norm)
-    sig2.GSJ.eps.expd.vec <- c(sig2.GSJ.eps.expd.vec, sig2.GSJ.expd)
-  }
-  sig2.GSJ.norm.eps <- mean(sig2.GSJ.eps.norm.vec)
-  sig2.GSJ.expd.eps <- mean(sig2.GSJ.eps.expd.vec)
-  
-  
-  ## ############################
-  ## Selecting K via AIC 
-  ## ############################
-  K.max    <- 4
-  AIC.norm <- rep(NA,K.max)
-  AIC.expd <- rep(NA,K.max)
   ##
-  for(K in 1:K.max){
-    RSS.norm    <- rep(NA,n)
-    RSS.expd    <- rep(NA,n)
-    L.norm.vec  <- rep(NA,n)
-    L.expd.vec  <- rep(NA,n)
-    for(i in 1:n){ 
-      Y_cent_sm.norm_i <- c(na.omit(Y.c.align.norm.mat[,i]))
-      Y_cent_sm.expd_i <- c(na.omit(Y.c.align.expd.mat[,i]))
-      U_sm_i           <- c(na.omit(U.align.mat[,i]))
-      lo.half          <- 1:floor(length(U_sm_i)/2)
-      up.half          <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
-      ##
-      List.norm    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_norm_la_mat, 
-                                               domain_grid    = grid_la_vec, 
-                                               Y_cent_sm_i    = Y_cent_sm.norm_i[lo.half], 
-                                               U_sm_i         = U_sm_i[lo.half], 
-                                               K              = K)
-      List.expd    <- ReconstPoFD::reconst_fun(cov_la_mat     = cov_expd_la_mat, 
-                                               domain_grid    = grid_la_vec, 
-                                               Y_cent_sm_i    = Y_cent_sm.expd_i[lo.half], 
-                                               U_sm_i         = U_sm_i[lo.half], 
-                                               K              = K)
-      ##
-      y.norm.fit  <- List.norm[['y_reconst']] + mu_norm_est_fun(List.norm[['x_reconst']])
-      y.expd.fit  <- List.expd[['y_reconst']] + mu_norm_est_fun(List.expd[['x_reconst']])
-      ##
-      RSS.norm[i] <- sum((y.norm.fit[!is.na(U.align.mat[,i])][up.half] - (Y_cent_sm.norm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
-      RSS.expd[i] <- sum((y.expd.fit[!is.na(U.align.mat[,i])][up.half] - (Y_cent_sm.expd_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
-      ##
-      L.norm.vec[i] <- -(n*log(2*pi)/2)-(n*log(sig2.GSJ.norm.eps)/2)-(RSS.norm[i]/(2*sig2.GSJ.norm.eps))
-      L.expd.vec[i] <- -(n*log(2*pi)/2)-(n*log(sig2.GSJ.expd.eps)/2)-(RSS.expd[i]/(2*sig2.GSJ.expd.eps))
-    }
-    AIC.norm[K] <- -sum(L.norm.vec) + K 
-    AIC.expd[K] <- -sum(L.expd.vec) + K
-  }
-  K.norm <- which.min(AIC.norm)
-  K.expd <- which.min(AIC.expd)
-  
-  ## Fitted Covariance:
-  if(K.norm>1){
-    cov_norm_la_mat <- FPCA_norm_obj$phi[,1:K.norm,drop=FALSE] %*% diag(FPCA_norm_obj$lambda[1:K.norm]) %*%  t(FPCA_norm_obj$phi[,1:K.norm,drop=FALSE])
-  }
-  if(K.norm==1){
-    cov_norm_la_mat <- FPCA_norm_obj$phi[,1:K.norm,drop=FALSE]  %*%  t(FPCA_norm_obj$phi[,1:K.norm,drop=FALSE]) * FPCA_norm_obj$lambda[1:K.norm]
-  }
-  if(K.expd>1){
-    cov_expd_la_mat <- FPCA_expd_obj$phi[,1:K.expd,drop=FALSE] %*% diag(FPCA_expd_obj$lambda[1:K.expd]) %*% t(FPCA_expd_obj$phi[,1:K.expd,drop=FALSE])
-  }
-  if(K.expd==1){
-    cov_expd_la_mat <- FPCA_expd_obj$phi[,1:K.expd,drop=FALSE] %*% t(FPCA_expd_obj$phi[,1:K.expd,drop=FALSE]) * FPCA_expd_obj$lambda[1:K.expd]
-  }
-  
-  ## ##########################  ## ################################  ## ################################
-  ## Reconstructing all functions
-  ## ##########################  ## ################################  ## ################################
-  Y.reconst.norm.list  <- vector("list", n)
-  Y.reconst.expd.list  <- vector("list", n)
-  X.reconst.norm.list  <- vector("list", n)
-  X.reconst.expd.list  <- vector("list", n)
+  reconst_norm_obj <- ReconstPoFD::reconstruct(Ly         = Y_norm_list, 
+                                               Lu         = U_list,
+                                               K          = NULL,
+                                               K_max      = 4,
+                                               pre_smooth = FALSE,
+                                               nRegGrid   = nRegGrid)
   ##
+  reconst_expd_obj <- ReconstPoFD::reconstruct(Ly         = Y_expd_list, 
+                                               Lu         = U_list,
+                                               K          = NULL,
+                                               K_max      = 4,
+                                               pre_smooth = FALSE,
+                                               nRegGrid   = nRegGrid)
+  
+  ## K chosen by AIC-type criterion:
+  K.norm <- reconst_norm_obj[['K_AIC']]
+  K.expd <- reconst_expd_obj[['K_AIC']]
+  
+  ## Reconstruction errors
   MaxAE_norm_vec     <- rep(NA, n)
   MaxAE_expd_vec     <- rep(NA, n)
   for(i in 1:n){
-    tmp.norm  <- ReconstPoFD::reconst_fun(cov_la_mat  = cov_norm_la_mat, 
-                                          domain_grid = grid_la_vec, 
-                                          Y_cent_sm_i = c(na.omit(Y.c.align.norm.mat[,i])), 
-                                          U_sm_i      = c(na.omit(U.align.mat[,i])), 
-                                          K           = K.norm)
-    
-    tmp.expd  <- ReconstPoFD::reconst_fun(cov_la_mat  = cov_expd_la_mat, 
-                                          domain_grid = grid_la_vec, 
-                                          Y_cent_sm_i = c(na.omit(Y.c.align.expd.mat[,i])), 
-                                          U_sm_i      = c(na.omit(U.align.mat[,i])), 
-                                          K           = K.expd)
-    
-    x_algo <- tmp.norm[['x_reconst']]
-    y_algo <- tmp.norm[['y_reconst']]
-    y_algo <- y_algo + mu_norm_est_fun(x_algo)
-    Y.reconst.norm.list[[i]]  <- y_algo
-    X.reconst.norm.list[[i]]  <- x_algo
+    y_norm_tmp <- reconst_norm_obj[['y_reconst_list']][[i]]
+    x_norm_tmp <- reconst_norm_obj[['x_reconst_list']][[i]]
     ##
-    x_algo <- tmp.expd[['x_reconst']]
-    y_algo <- tmp.expd[['y_reconst']]
-    y_algo <- y_algo + mu_expd_est_fun(x_algo)
-    Y.reconst.expd.list[[i]]  <- y_algo
-    X.reconst.expd.list[[i]]  <- x_algo
-    
+    y_expd_tmp <- reconst_expd_obj[['y_reconst_list']][[i]]
+    x_expd_tmp <- reconst_expd_obj[['x_reconst_list']][[i]]
     ## Max absolute error:
-    MaxAE_norm_vec[i] <- max(abs(Y.reconst.norm.list[[i]] - True_norm_curve_fun(u=X.reconst.norm.list[[i]], i=i)))
-    MaxAE_expd_vec[i] <- max(abs(Y.reconst.expd.list[[i]] - True_expd_curve_fun(u=X.reconst.expd.list[[i]], i=i)))
+    MaxAE_norm_vec[i] <- max(abs(y_norm_tmp - True_norm_curve_fun(u=x_norm_tmp, i=i)))
+    MaxAE_expd_vec[i] <- max(abs(y_expd_tmp - True_expd_curve_fun(u=x_expd_tmp, i=i)))
   }
   
   ## ##################################################################
@@ -386,6 +228,8 @@ sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% {
 
 ## Row-names:
 rownames(sim.results) <- c("MAE_norm", "MAE_expd", "K.norm", "K.expd")
+
+## sim.results
 
 ## Save results:
 ## save(sim.results, file = paste0("n",n,"_m",m,"_simResults.RData"))

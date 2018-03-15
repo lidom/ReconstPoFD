@@ -58,13 +58,13 @@ reconstruct <- function(Ly,
   
   ## K AIC
   if(is.null(K)){
-    K.AIC <- K_aic_fun(Ly_cent     = Ly_cent_align, 
+    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent_align, 
                                      Lu          = Lu_align,
                                      cov_la_mat  = cov_est_mat,
                                      workGrid    = workGrid,
                                      K_max       = K_max)
-    K <- K.AIC
-  }
+    K <- K_AIC
+  }else{K_AIC <- NULL}
   
   ## Re-Fitted Covariance:
   if(K>1){
@@ -97,6 +97,7 @@ reconstruct <- function(Ly,
   return(list(
     "y_reconst_list"  = y_reconst_list,
     "x_reconst_list"  = x_reconst_list,
+    "K_AIC"           = K_AIC,
     "fdapace_obj"     = fdapace_obj))
 }
 
@@ -241,11 +242,11 @@ K_aic_fun <- function(Ly_cent,
       up.half     <- (floor(length(U_sm_i)/2)+1):length(U_sm_i)
       ##
       List_obj    <- reconst_fun(cov_la_mat     = cov_la_mat, 
-                                              workGrid       = workGrid, 
-                                              Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
-                                              U_sm_i         = U_sm_i[lo.half], 
-                                              K              = K,
-                                              pre_smooth     = pre_smooth)
+                                 workGrid       = workGrid, 
+                                 Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
+                                 U_sm_i         = U_sm_i[lo.half], 
+                                 K              = K,
+                                 pre_smooth     = pre_smooth)
       ##
       y_fit      <- List_obj[['y_reconst']] #+ mu_est_fun(List_obj[['x_reconst']])
       ## RSS.vec[i] <- sum((y_fit[!is.na(Lu[[i]])][up.half] - (Y_cent_sm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
@@ -254,8 +255,8 @@ K_aic_fun <- function(Ly_cent,
     }
     AIC.vec[K] <- -sum(L.vec) + K 
   }
-  K.AIC <- which.min(AIC.vec)
-  return(K.AIC)
+  K_AIC <- which.min(AIC.vec)
+  return(K_AIC)
 }
 
 #' Iterative Reconstruction Algoritm

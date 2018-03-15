@@ -8,9 +8,9 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
   nRegGrid = 101)
 }
 \arguments{
-\item{Ly}{List of Y-values. The ith list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
+\item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
 
-\item{Lu}{List of U-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}}
+\item{Lu}{List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}}
 
 \item{K}{Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.}
 
@@ -18,7 +18,7 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
 
-\item{nRegGrid}{Number of grid-points in the approxmative regular grid.}
+\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid' (needed for the fdapace::FPCA() function).}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.

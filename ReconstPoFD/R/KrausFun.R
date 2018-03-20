@@ -53,81 +53,13 @@ reconstructKraus <- function(X_mat, alpha = NULL){
 }
 
 
-
-#' Simulate Data as in Kraus (JRSSB, 2015)
-#'
-#' This function allows to simulate functional data as used in the simulation study of: 
-#' Kraus, D. (2015). Components and completion of partially observed functional data. 
-#' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
-#' However, the missingness process is adjusted to avoid missing 'holes'.
-#' @param p          Number of grid points in [a,b]
-#' @param n          Number of functions
-#' @param a          Lower interval boundary
-#' @param b          Upper interval boundary
-#' @param missings   Generate functions with missing parts (NAs); default: missings = TRUE
-#' @export simuldataKraus
-#' @examples  
-#' a <- 0; b <- 10; p <- 51; n <- 100
-#' SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
-#' ## 
-#' Y_mat    <- SimDat[['Y_mat']]
-#' ##
-#' matplot(Y_mat[,1:10], col=gray(.5), type="l")
-simuldataKraus <- function(p=100, n=100, a=0, b=1){
-  ##
-  u_vec  <- seq(a, b, len=p)
-  ##
-  Y_mat  <- matrix(NA, p, n)
-  U_mat  <- matrix(NA, p, n)
-  ##
-  Y_list <- vector("list", n)
-  U_list <- vector("list", n)
-  ##
-  for(i in 1:n){
-    Y_vec <- c(rowMeans(
-      sapply(1:100,function(k){
-        sqrt(3^(-2*k+1)) * rnorm(1) * sqrt(2) * cos(2*pi*k*(u_vec-a)/(b-a)) +
-          sqrt(3^(-2*k)) * rnorm(1) * sqrt(2) * sin(2*pi*k*(u_vec-a)/(b-a)) 
-      })))
-    if(missings){
-      ## Random subintervals
-      if(1 == rbinom(n = 1, size = 1, prob = .6)){
-        A_i  <- runif(n = 1, min = a, max = (a+ (b-a) * 0.25))
-        B_i  <- runif(n = 1, min = (b- (b-a) * 0.25), max = b)
-      }else{A_i = a; B_i = b}
-      Y_vec[u_vec < A_i] <- NA
-      Y_vec[u_vec > B_i] <- NA
-      ##
-      U_vec <- seq(a, b, len=p)
-      U_vec[u_vec < A_i] <- NA
-      U_vec[u_vec > B_i] <- NA
-      ## 
-      # ## Kraus-Version (contains 'holes' that cannot be used with our method so far)
-      # d=1.4; f=0.2
-      # U_12 <- runif(2)
-      # C    <- d*sqrt(U_12[1])
-      # E    <- f*U_12[2]
-      # M_lo <- max(0,C-E)
-      # M_up <- min(1,C+E)
-      # X_tmp[M_lo <= t_vec & t_vec <= M_up] <- NA
-      }
-    Y_mat[,i]   <- Y_vec
-    U_mat[,i]   <- U_vec
-    ##
-    Y_list[[i]] <- c(stats::na.omit(Y_vec))
-    U_list[[i]] <- c(stats::na.omit(U_vec))
-  }
-  return(list("Y_mat"  = Y_mat, 
-              "U_mat"  = U_mat,
-              "Y_list" = Y_list, 
-              "U_list" = U_list))
-}
-
-
+## -------------------------------------------------------------------------
 meanKraus <- function(X_mat){
   rowMeans(X_mat, na.rm = TRUE)
 }
 
+
+## -------------------------------------------------------------------------
 covKraus <- function(X_mat){
   p <- nrow(X_mat)
   n <- ncol(X_mat)
@@ -152,6 +84,7 @@ covKraus <- function(X_mat){
 }
 
 
+## -------------------------------------------------------------------------
 reconstKraus_fun <- function(cov_mat, X_cent_vec, alpha=1e-4){
   ##
   M_bool_vec   <- is.na(X_cent_vec)
@@ -176,6 +109,8 @@ reconstKraus_fun <- function(cov_mat, X_cent_vec, alpha=1e-4){
               "df"                 = df))
 }
 
+
+## -------------------------------------------------------------------------
 gcvKraus <- function(cov_mat, mean_vec, X_Compl_mat, M_bool_vec, alpha){
   n_Compl  <- ncol(X_Compl_mat)
   rss_vec  <- rep(NA,n_Compl)
@@ -197,4 +132,5 @@ gcvKraus <- function(cov_mat, mean_vec, X_Compl_mat, M_bool_vec, alpha){
   return(gcv)
 }
 gcvKraus <- Vectorize(FUN = gcvKraus, vectorize.args = "alpha")
+
 

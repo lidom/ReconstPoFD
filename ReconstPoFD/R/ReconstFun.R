@@ -37,6 +37,7 @@ reconstruct <- function(Ly,
                         pre_smooth = FALSE,
                         nRegGrid   = 51)
 {
+  ##
   n        <- length(Ly)
   ##
   ## Estimate Mean and Covariance 
@@ -578,90 +579,5 @@ iter_reconst_fun <- function(cov_la_mat,
               "x_reconst"=U_la_i))
 }
 
-
-#' Simulate Data 
-#'
-#' This function allows to simulate partially observed functional data. 
-#' @param n          Number of functions
-#' @param m          Number of discretization points 
-#' @param a          Lower interval boundary
-#' @param b          Upper interval boundary
-#' @param n_basis    Number of basis functions
-#' @param DGP        Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
-#' @export simuldata
-#' @examples  
-#' a <- 0; b <- 10; m <- 15; n <- 100
-#' mean_fun <- function(u){return( ((u-a)/(b-a)) +sin((u-a)/(b-a)))}
-#' SimDat   <- simuldata(n = n, m = m, a = a, b = b)
-#' ## 
-#' Y_mat       <- SimDat[['Y_mat']]
-#' U_mat       <- SimDat[['U_mat']]
-#' Y_true_mat  <- SimDat[['Y_true_mat']]
-#' U_true_mat  <- SimDat[['U_true_mat']]
-#' ##
-#' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5],      y=Y_mat[,1:5],      col=gray(.5), type="l", main="Missings & Noise")
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1]){
-  ##
-  ## meanfunction
-  mean_fun <- function(u){return(((u-a)/(b-a)) + sin((u-a)/(b-a)))}
-  eps_var  <- .20
-  ##
-  ## Generation of prediction points U
-  U_true_mat    <- matrix(seq(a,b,len=75), 75, n)
-  U_mat         <- matrix(NA, m, n)
-  for(i in 1:n){
-    ## Random observed interval
-    if(1 == rbinom(n = 1, size = 1, prob = .6)){
-      A_i  <- runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-      B_i  <- runif(n = 1, min = (b- (b-a) * 0.33), max = b)
-    }else{A_i = a; B_i = b}
-    ##
-    ## sampling from the total grid
-    U_mat[,i] <- runif(n=m, min = A_i, max = B_i)
-    ## ordering
-    U_mat[,i] <- unique(U_mat[,i][order(U_mat[,i])])
-  }
-  ##
-  Y_true_mat <- matrix(NA, 75, n)
-  Y_mat      <- matrix(NA, m, n)
-  k_vec      <- 1:n_basis
-  for(i in 1:n){
-    if(DGP=="DGP1"){
-    xi1 <- rnorm(n=n_basis, mean=0, sd=sqrt(4-(4/(n_basis + 1))*(k_vec - 1)))
-    xi2 <- rnorm(n=n_basis, mean=0, sd=sqrt(4-(4/(n_basis + 1))*(k_vec)))
-    }
-    if(DGP=="DGP2"){
-      xi1 <- c(rexp(n=n_basis, rate=1/sqrt(4-(4/(n_basis + 1))*(k_vec-1)))-sqrt(4-(4/(n_basis + 1))*(k_vec-1)))
-      xi2 <- c(rexp(n=n_basis, rate=1/sqrt(4-(4/(n_basis + 1))*(k_vec)))  -sqrt(4-(4/(n_basis + 1))*(k_vec))) 
-    }
-    ##
-    Y_true_mat[,i] <- c(c(rowMeans(
-      sapply(k_vec, function(k){
-        xi1[k] * -1 * cos(k*pi*(U_true_mat[,i]-a)/(b-a))/sqrt(5) +
-        xi2[k] *      sin(k*pi*(U_true_mat[,i]-a)/(b-a))/sqrt(5) 
-      }))) + mean_fun(U_true_mat[,i])) 
-    ##
-    Y_mat[,i] <- c(c(rowMeans(
-      sapply(k_vec, function(k){
-        xi1[k] * -1 * cos(k*pi*(U_mat[,i]-a)/(b-a))/sqrt(5) +
-        xi2[k] *      sin(k*pi*(U_mat[,i]-a)/(b-a))/sqrt(5) 
-      }))) + mean_fun(U_mat[,i]) + rnorm(n=m,  mean = 0, sd=sqrt(eps_var)))
-    ##
-  }
-  return(list("Y_mat"       = Y_mat, 
-              "U_mat"       = U_mat,
-              "Y_true_mat"  = Y_true_mat, 
-              "U_true_mat"  = U_true_mat,
-              "Y_list"      = split(Y_mat, rep(1:ncol(Y_mat), each = nrow(Y_mat))), 
-              "U_list"      = split(U_mat, rep(1:ncol(U_mat), each = nrow(U_mat))),
-              "Y_true_list" = split(Y_true_mat, rep(1:ncol(Y_true_mat), each = nrow(Y_true_mat))), 
-              "U_true_list" = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat)))
-              ))
-}
 
 

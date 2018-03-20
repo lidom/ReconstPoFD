@@ -31,13 +31,19 @@ SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 ##
-reconst_result <- reconstruct(Ly = Y_list, Lu = U_list, K=4, 
+reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
 pre_smooth = TRUE, nRegGrid = p)
-reconst_mat    <- matrix(unlist(reconst_result[['y_reconst_list']]), 
+reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
 nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 ##
-par(mfrow=c(2,1))
-matplot(Y_mat[,1:5],       col=gray(.5), type="l")
-matplot(reconst_mat[,1:5], col=gray(.5), type="l")
+reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
+pre_smooth = FALSE, nRegGrid = p)
+reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+##
+par(mfrow=c(3,1))
+matplot(Y_mat[,1:5],         ylab="", col=gray(.5), type="l", main="Orig. Data")
+matplot(reconst_mat_1[,1:5], ylab="", col=gray(.5), type="l")
+matplot(reconst_mat_2[,1:5], ylab="", col=gray(.5), type="l")
 par(mfrow=c(1,1))
 }

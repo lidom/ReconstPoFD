@@ -26,7 +26,7 @@ Y_mat <- SimDat[['Y_mat']]
 reconst_mat <- reconstructKraus(Y_mat)
 ##
 par(mfrow=c(2,1))
-matplot(Y_mat[,1:10],       col=gray(.5), type="l")
-matplot(reconst_mat[,1:10], col=gray(.5), type="l")
+matplot(Y_mat[,1:5],       col=gray(.5), type="l", main="Original Data")
+matplot(reconst_mat[,1:5], col=gray(.5), type="l")
 par(mfrow=c(1,1))
 }

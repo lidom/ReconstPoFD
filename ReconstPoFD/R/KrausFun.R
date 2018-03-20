@@ -35,12 +35,12 @@ reconstructKraus <- function(X_mat, alpha = NULL){
     O_bool_vec <- !M_bool_vec
     ##
     if(is.null(alpha)){
-      alpha <- optimize(f = function(alpha){gcvKraus(cov_mat     = cov_mat, 
-                                                     mean_vec    = mean_vec, 
-                                                     X_Compl_mat = X_Compl_mat, 
-                                                     M_bool_vec  = M_bool_vec, 
-                                                     alpha       = alpha)},
-                        interval = c(.Machine$double.eps, sum(diag(cov_mat))*n), maximum = FALSE)$minimum
+      alpha <- stats::optimize(f = function(alpha){gcvKraus(cov_mat     = cov_mat, 
+                                                            mean_vec    = mean_vec, 
+                                                            X_Compl_mat = X_Compl_mat, 
+                                                            M_bool_vec  = M_bool_vec, 
+                                                            alpha       = alpha)},
+                               interval = c(.Machine$double.eps, sum(diag(cov_mat))*n), maximum = FALSE)$minimum
     }
     ##
     result_tmp <- reconstKraus_fun(cov_mat    = cov_mat, 

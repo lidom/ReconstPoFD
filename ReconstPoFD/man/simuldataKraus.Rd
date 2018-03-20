@@ -14,8 +14,6 @@ simuldataKraus(p = 100, n = 100, a = 0, b = 1)
 \item{a}{Lower interval boundary}
 
 \item{b}{Upper interval boundary}
-
-\item{missings}{Generate functions with missing parts (NAs); default: missings = TRUE}
 }
 \description{
 This function allows to simulate functional data as used in the simulation study of: 

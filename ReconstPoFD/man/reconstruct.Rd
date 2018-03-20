@@ -25,8 +25,8 @@ This function allows you to reconstruct the missing parts of a function given th
 }
 \examples{
  
-a <- 0; b <- 10; p <- 51; n <- 100
-SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+a <- 0; b <- 10; n <- 100
+SimDat   <- simuldataKraus(n = n, a = a, b = b)
 ## 
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]

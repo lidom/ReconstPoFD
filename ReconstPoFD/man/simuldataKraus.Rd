@@ -2,31 +2,51 @@
 % Please edit documentation in R/SimulFun.R
 \name{simuldataKraus}
 \alias{simuldataKraus}
-\title{Simulate Data as in Kraus (JRSSB, 2015)}
+\title{Simulate Data (Adapted from Kraus (2015))}
 \usage{
-simuldataKraus(p = 100, n = 100, a = 0, b = 1)
+simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1])
 }
 \arguments{
-\item{p}{Number of grid points in [a,b]}
-
 \item{n}{Number of functions}
 
 \item{a}{Lower interval boundary}
 
 \item{b}{Upper interval boundary}
+
+\item{DGP}{Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.}
 }
 \description{
-This function allows to simulate functional data as used in the simulation study of: 
-Kraus, D. (2015). Components and completion of partially observed functional data. 
-Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
+This function allows to simulate functional data as used in the simulation study of:
+}
+\details{
 However, the missingness process is adjusted to avoid missing 'holes'.
 }
 \examples{
  
-a <- 0; b <- 10; p <- 51; n <- 100
-SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+a <- 0; b <- 1; n <- 100; DGP <- c('DGP3', 'DGP4')[2]
+if(DGP=='DGP3'){
+  mean_fun <- function(u){return(rep(0,length(u)))}
+}
+if(DGP=='DGP4'){
+  mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
+}
+SimDat   <- simuldataKraus(n = n, a = a, b = b, DGP = DGP)
 ## 
-Y_mat    <- SimDat[['Y_mat']]
+Y_mat       <- SimDat[['Y_mat']]
+U_mat       <- SimDat[['U_mat']]
+Y_true_mat  <- SimDat[['Y_true_mat']]
+U_true_mat  <- SimDat[['U_true_mat']]
 ##
-matplot(Y_mat[,1:10], col=gray(.5), type="l")
+par(mfrow=c(2,1))
+matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+main="Missings & Noise", xlim=c(a,b))
+lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
+main="NoMissings & NoNoise", xlim=c(a,b))
+lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+par(mfrow=c(1,1))
+}
+\references{
+Kraus, D. (2015). Components and completion of partially observed functional data. 
+Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801.
 }

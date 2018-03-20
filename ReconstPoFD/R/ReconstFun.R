@@ -9,26 +9,33 @@
 #' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function).
 #' @export reconstruct
 #' @examples  
-#' a <- 0; b <- 10; p <- 51; n <- 100
-#' SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+#' a <- 0; b <- 1; n <- 100
+#' SimDat   <- simuldataKraus(n = n, a = a, b = b)
 #' ## 
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 #' ##
 #' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
-#' pre_smooth = TRUE, nRegGrid = p)
-#' reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
+#' pre_smooth = TRUE, nRegGrid = 75)
+#' Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['x_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 #' ##
 #' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
-#' pre_smooth = FALSE, nRegGrid = p)
-#' reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+#' pre_smooth = FALSE, nRegGrid = 75)
+#' Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['x_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 #' ##
 #' par(mfrow=c(3,1))
-#' matplot(Y_mat[,1:5],         ylab="", col=gray(.5), type="l", main="Orig. Data")
-#' matplot(reconst_mat_1[,1:5], ylab="", col=gray(.5), type="l")
-#' matplot(reconst_mat_2[,1:5], ylab="", col=gray(.5), type="l")
+#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
+#' main="Orig. Data", xlim=c(a,b))
+#' matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
+#' type="l", main="pre_smooth=TRUE", ylab="", xlab="", xlim=c(a,b))
+#' matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
+#' type="l", main="pre_smooth=FALSE", ylab="", xlab="", xlim=c(a,b))
 #' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
                         Lu,
@@ -101,8 +108,9 @@ reconstruct <- function(Ly,
     cov_est_mat <- evec_mat[,1,drop=FALSE]  %*%  t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
   }
   ## Reconstructing all functions
-  y_reconst_list  <- vector("list", n)
-  x_reconst_list  <- vector("list", n)
+  ## As list, since this facilitates a future generalization to 'random m'
+  Y_reconst_list  <- vector("list", n)
+  U_reconst_list  <- vector("list", n)
   ##
   for(i in 1:n){
     tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
@@ -116,13 +124,13 @@ reconstruct <- function(Ly,
     y_cent_tmp <- tmp[['y_reconst']]
     y_tmp      <- y_cent_tmp + mu_est_fun(x_tmp)
     ##
-    y_reconst_list[[i]]  <- y_tmp
-    x_reconst_list[[i]]  <- x_tmp
+    Y_reconst_list[[i]]  <- y_tmp
+    U_reconst_list[[i]]  <- x_tmp
   }
   ##
   return(list(
-    "y_reconst_list"  = y_reconst_list,
-    "x_reconst_list"  = x_reconst_list,
+    "Y_reconst_list"  = Y_reconst_list,
+    "U_reconst_list"  = U_reconst_list,
     "K_AIC"           = K_AIC,
     "fdapace_obj"     = fdapace_obj))
 }

@@ -25,8 +25,8 @@ This function allows to simulate partially observed functional data.
 }
 \examples{
  
-a <- 0; b <- 10; m <- 15; n <- 100
-mean_fun <- function(u){return( ((u-a)/(b-a)) +sin((u-a)/(b-a)))}
+a <- 0; b <- 1; m <- 15; n <- 100
+mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
 SimDat   <- simuldata(n = n, m = m, a = a, b = b)
 ## 
 Y_mat       <- SimDat[['Y_mat']]

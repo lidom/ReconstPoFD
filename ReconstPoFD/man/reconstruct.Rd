@@ -5,7 +5,7 @@
 \title{Reconstruct partially observed functions}
 \usage{
 reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
-  nRegGrid = 101)
+  nRegGrid = 51)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -18,8 +18,26 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
 
-\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid' (needed for the fdapace::FPCA() function).}
+\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function).}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.
+}
+\examples{
+ 
+a <- 0; b <- 10; p <- 51; n <- 100
+SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+## 
+Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
+U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
+##
+reconst_result <- reconstruct(Ly = Y_list, Lu = U_list, K=4, 
+pre_smooth = TRUE, nRegGrid = p)
+reconst_mat    <- matrix(unlist(reconst_result[['y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+##
+par(mfrow=c(2,1))
+matplot(Y_mat[,1:5],       col=gray(.5), type="l")
+matplot(reconst_mat[,1:5], col=gray(.5), type="l")
+par(mfrow=c(1,1))
 }

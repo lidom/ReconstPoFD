@@ -6,25 +6,48 @@
 #' @param K           Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
 #' @param K_max       Maximum K (used in the AIC-type criterion)
 #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid' (needed for the fdapace::FPCA() function). 
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function).
 #' @export reconstruct
+#' @examples  
+#' a <- 0; b <- 10; p <- 51; n <- 100
+#' SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+#' ## 
+#' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
+#' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
+#' ##
+#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
+#' pre_smooth = TRUE, nRegGrid = p)
+#' reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' ##
+#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
+#' pre_smooth = FALSE, nRegGrid = p)
+#' reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' ##
+#' par(mfrow=c(3,1))
+#' matplot(Y_mat[,1:5],         ylab="", col=gray(.5), type="l", main="Orig. Data")
+#' matplot(reconst_mat_1[,1:5], ylab="", col=gray(.5), type="l")
+#' matplot(reconst_mat_2[,1:5], ylab="", col=gray(.5), type="l")
+#' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
                         Lu,
                         K          = NULL,
                         K_max      = 4,
                         pre_smooth = FALSE,
-                        nRegGrid   = 101)
+                        nRegGrid   = 51)
 {
-  n <- length(Ly)
-  
+  n        <- length(Ly)
+  ##
   ## Estimate Mean and Covariance 
   fdapace_obj <- fdapace::FPCA(Ly    = Ly, 
                                Lt    = Lu, 
                                optns = list(
-                                 "dataType"      = "Sparse", 
-                                 "kernel"        = "gauss",
-                                 "error"         = TRUE,
-                                 "nRegGrid"      = nRegGrid))
+                                 "dataType"       = "Sparse", 
+                                 "kernel"         = "gauss",
+                                 "methodMuCovEst" = "smooth",
+                                 "nRegGrid"       = nRegGrid
+                                 ))
   ## Regular grid
   workGrid        <- fdapace_obj$workGrid
   ## Covariance
@@ -37,55 +60,57 @@ reconstruct <- function(Ly,
   for(i in 1:n){
     Ly_cent[[i]] <- Ly[[i]] - mu_est_fun(Lu[[i]])
   }
-  
+  ##
   ## Aligning Y_cent and U according to 'workGrid' ########################
-  Y_cent_align_mat  <- matrix(data = NA, nrow = nRegGrid, ncol = n)
-  U_align_mat       <- matrix(data = NA, nrow = nRegGrid, ncol = n)
+  Y_cent_mat  <- matrix(data = NA, nrow = nRegGrid, ncol = n)
+  U_mat       <- matrix(data = NA, nrow = nRegGrid, ncol = n)
   for(i in 1:n){
-    Y_c_tmp    <- c(stats::na.omit(Ly_cent[[i]]))
-    U_tmp      <- c(stats::na.omit(Lu[[i]]))
+    Y_cent_tmp  <- c(stats::na.omit(Ly_cent[[i]]))
+    U_tmp       <- c(stats::na.omit(Lu[[i]]))
     for(j in 1:length(U_tmp)){
-      loc                     <- order(abs(workGrid - U_tmp[j]))[1]
-      Y_cent_align_mat[loc,i] <- Y_c_tmp[j]
+      loc               <- order(abs(workGrid - U_tmp[j]))[1]
+      Y_cent_mat[loc,i] <- Y_cent_tmp[j]
     }
-    na_loc                  <- is.na(Y_cent_align_mat[,i])
-    U_align_mat[!na_loc,i]  <- workGrid[!na_loc]       
+    na_loc            <- is.na(Y_cent_mat[,i])
+    U_mat[!na_loc,i]  <- workGrid[!na_loc]       
   }
-  
   ## From matrix to list:
-  Ly_cent_align <- split(Y_cent_align_mat, rep(1:n, each = nRegGrid))
-  Lu_align      <- split(U_align_mat,      rep(1:n, each = nRegGrid))
-  
+  Ly_cent <- split(Y_cent_mat, rep(1:n, each = nRegGrid))
+  Lu      <- split(U_mat,      rep(1:n, each = nRegGrid))
+  ##
   ## K AIC
   if(is.null(K)){
-    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent_align, 
-                                     Lu          = Lu_align,
-                                     cov_la_mat  = cov_est_mat,
-                                     workGrid    = workGrid,
-                                     K_max       = K_max)
+    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent, 
+                       Lu          = Lu,
+                       cov_la_mat  = cov_est_mat,
+                       workGrid    = workGrid,
+                       K_max       = K_max)
     K <- K_AIC
   }else{K_AIC <- NULL}
   
   ## Re-Fitted Covariance:
+  e_list        <- eigen(cov_est_mat, symmetric = TRUE)
+  positiveInd   <- e_list[['values']] >= 0
+  eval_vec      <- e_list[['values']][positiveInd]
+  evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
   if(K>1){
-    cov_est_mat <- fdapace_obj$phi[,1:K,drop=FALSE] %*% diag(fdapace_obj$lambda[1:K]) %*%  t(fdapace_obj$phi[,1:K,drop=FALSE])
-  }
+    cov_est_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
+    }
   if(K==1){
-    cov_est_mat <- fdapace_obj$phi[,1:K,drop=FALSE]  %*%  t(fdapace_obj$phi[,1:K,drop=FALSE]) * fdapace_obj$lambda[1:K]
+    cov_est_mat <- evec_mat[,1,drop=FALSE]  %*%  t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
   }
-  
   ## Reconstructing all functions
   y_reconst_list  <- vector("list", n)
   x_reconst_list  <- vector("list", n)
   ##
   for(i in 1:n){
     tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
-                                      workGrid    = workGrid, 
-                                      Y_cent_sm_i = c(stats::na.omit(Y_cent_align_mat[,i])), 
-                                      U_sm_i      = c(stats::na.omit(U_align_mat[,i])), 
-                                      K           = K, 
-                                      pre_smooth  = pre_smooth)
-    
+                        workGrid    = workGrid, 
+                        Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,i])), 
+                        U_sm_i      = c(stats::na.omit(U_mat[,i])), 
+                        K           = K, 
+                        pre_smooth  = pre_smooth)
+    ##
     x_tmp      <- tmp[['x_reconst']]
     y_cent_tmp <- tmp[['y_reconst']]
     y_tmp      <- y_cent_tmp + mu_est_fun(x_tmp)
@@ -180,7 +205,7 @@ reconst_fun <- function(
     ## upper marginal point
     y_reconst_vec[max(sm.gr.loc):length(workGrid)] <- y_reconst_vec[max(sm.gr.loc):length(workGrid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
     ## estimated ('observed') part
-    y_reconst_vec[sm.gr.loc]                          <- Y_cent_sm_compl_fit_i
+    y_reconst_vec[sm.gr.loc]                       <- Y_cent_sm_compl_fit_i
   }
   ## ######################
   return(list("y_reconst"  = c(y_reconst_vec),
@@ -552,3 +577,91 @@ iter_reconst_fun <- function(cov_la_mat,
   return(list("y_reconst"=Y_cent_la_i,
               "x_reconst"=U_la_i))
 }
+
+
+#' Simulate Data 
+#'
+#' This function allows to simulate partially observed functional data. 
+#' @param n          Number of functions
+#' @param m          Number of discretization points 
+#' @param a          Lower interval boundary
+#' @param b          Upper interval boundary
+#' @param n_basis    Number of basis functions
+#' @param DGP        Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
+#' @export simuldata
+#' @examples  
+#' a <- 0; b <- 10; m <- 15; n <- 100
+#' mean_fun <- function(u){return( ((u-a)/(b-a)) +sin((u-a)/(b-a)))}
+#' SimDat   <- simuldata(n = n, m = m, a = a, b = b)
+#' ## 
+#' Y_mat       <- SimDat[['Y_mat']]
+#' U_mat       <- SimDat[['U_mat']]
+#' Y_true_mat  <- SimDat[['Y_true_mat']]
+#' U_true_mat  <- SimDat[['U_true_mat']]
+#' ##
+#' par(mfrow=c(2,1))
+#' matplot(x=U_mat[,1:5],      y=Y_mat[,1:5],      col=gray(.5), type="l", main="Missings & Noise")
+#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
+#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+#' par(mfrow=c(1,1))
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1]){
+  ##
+  ## meanfunction
+  mean_fun <- function(u){return(((u-a)/(b-a)) + sin((u-a)/(b-a)))}
+  eps_var  <- .20
+  ##
+  ## Generation of prediction points U
+  U_true_mat    <- matrix(seq(a,b,len=75), 75, n)
+  U_mat         <- matrix(NA, m, n)
+  for(i in 1:n){
+    ## Random observed interval
+    if(1 == rbinom(n = 1, size = 1, prob = .6)){
+      A_i  <- runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+      B_i  <- runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+    }else{A_i = a; B_i = b}
+    ##
+    ## sampling from the total grid
+    U_mat[,i] <- runif(n=m, min = A_i, max = B_i)
+    ## ordering
+    U_mat[,i] <- unique(U_mat[,i][order(U_mat[,i])])
+  }
+  ##
+  Y_true_mat <- matrix(NA, 75, n)
+  Y_mat      <- matrix(NA, m, n)
+  k_vec      <- 1:n_basis
+  for(i in 1:n){
+    if(DGP=="DGP1"){
+    xi1 <- rnorm(n=n_basis, mean=0, sd=sqrt(4-(4/(n_basis + 1))*(k_vec - 1)))
+    xi2 <- rnorm(n=n_basis, mean=0, sd=sqrt(4-(4/(n_basis + 1))*(k_vec)))
+    }
+    if(DGP=="DGP2"){
+      xi1 <- c(rexp(n=n_basis, rate=1/sqrt(4-(4/(n_basis + 1))*(k_vec-1)))-sqrt(4-(4/(n_basis + 1))*(k_vec-1)))
+      xi2 <- c(rexp(n=n_basis, rate=1/sqrt(4-(4/(n_basis + 1))*(k_vec)))  -sqrt(4-(4/(n_basis + 1))*(k_vec))) 
+    }
+    ##
+    Y_true_mat[,i] <- c(c(rowMeans(
+      sapply(k_vec, function(k){
+        xi1[k] * -1 * cos(k*pi*(U_true_mat[,i]-a)/(b-a))/sqrt(5) +
+        xi2[k] *      sin(k*pi*(U_true_mat[,i]-a)/(b-a))/sqrt(5) 
+      }))) + mean_fun(U_true_mat[,i])) 
+    ##
+    Y_mat[,i] <- c(c(rowMeans(
+      sapply(k_vec, function(k){
+        xi1[k] * -1 * cos(k*pi*(U_mat[,i]-a)/(b-a))/sqrt(5) +
+        xi2[k] *      sin(k*pi*(U_mat[,i]-a)/(b-a))/sqrt(5) 
+      }))) + mean_fun(U_mat[,i]) + rnorm(n=m,  mean = 0, sd=sqrt(eps_var)))
+    ##
+  }
+  return(list("Y_mat"       = Y_mat, 
+              "U_mat"       = U_mat,
+              "Y_true_mat"  = Y_true_mat, 
+              "U_true_mat"  = U_true_mat,
+              "Y_list"      = split(Y_mat, rep(1:ncol(Y_mat), each = nrow(Y_mat))), 
+              "U_list"      = split(U_mat, rep(1:ncol(U_mat), each = nrow(U_mat))),
+              "Y_true_list" = split(Y_true_mat, rep(1:ncol(Y_true_mat), each = nrow(Y_true_mat))), 
+              "U_true_list" = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat)))
+              ))
+}
+
+

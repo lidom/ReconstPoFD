@@ -51,38 +51,7 @@ eps_var  <- .20
 ## ##################################
 
 
-## #########################################################
-## mean-/eigen-functions and eigenvalues ###################
-mean_fun <- function(u){return(u+sin(u))}
-e1_fun   <- function(u){return(-cos(1*pi*u/(b-a))/sqrt(5))}# This one 
-e2_fun   <- function(u){return( sin(1*pi*u/(b-a))/sqrt(5))}
-e3_fun   <- function(u){return(-cos(2*pi*u/(b-a))/sqrt(5))}# This one 
-e4_fun   <- function(u){return( sin(2*pi*u/(b-a))/sqrt(5))}
-e5_fun   <- function(u){return(-cos(3*pi*u/(b-a))/sqrt(5))}
-e6_fun   <- function(u){return( sin(3*pi*u/(b-a))/sqrt(5))}
-## #########################################################
 
-## check-plot:
-par(mfrow=c(1,3))
-plot(y=mean_fun(u=seq(a,b,len=25)), x=seq(a,b,len=25), type="l")
-plot(y=e1_fun(  u=seq(a,b,len=25)), x=seq(a,b,len=25), type="l")
-plot(y=e2_fun(  u=seq(a,b,len=25)), x=seq(a,b,len=25), type="l")
-par(mfrow=c(1,1))
-dev.off()
-
-
-## #########################################################
-## covariance function
-gamma_fun <- function(u,v){
-  result <- lambda1 * e1_fun(u) * e1_fun(v) + 
-    lambda2 * e2_fun(u) * e2_fun(v) + 
-    lambda3 * e3_fun(u) * e3_fun(v) +
-    lambda4 * e4_fun(u) * e4_fun(v) + 
-    lambda5 * e5_fun(u) * e5_fun(v) + 
-    lambda6 * e6_fun(u) * e6_fun(v)
-  return(result)
-}
-## ########################################################
 
 
 ## #######################################################################

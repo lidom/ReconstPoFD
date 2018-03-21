@@ -4,7 +4,8 @@
 \alias{K_aic_fun}
 \title{AIC-based Selection of the Number of Eigenfunctions}
 \usage{
-K_aic_fun(Ly_cent, Lu, cov_la_mat, workGrid, K_max = 4, pre_smooth = FALSE)
+K_aic_fun(Ly_cent, Lu, cov_la_mat, workGrid, K_max = 4, pre_smooth = FALSE,
+  messages = FALSE)
 }
 \arguments{
 \item{Ly_cent}{List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}}
@@ -18,6 +19,8 @@ K_aic_fun(Ly_cent, Lu, cov_la_mat, workGrid, K_max = 4, pre_smooth = FALSE)
 \item{K_max}{Maximum K (truncation parameter)}
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
+
+\item{messages}{Print messages? (default=messages=FALSE)}
 }
 \description{
 This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 

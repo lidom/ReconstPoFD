@@ -4,7 +4,8 @@
 \alias{simuldataKraus}
 \title{Simulate Data (Adapted from Kraus (2015))}
 \usage{
-simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1])
+simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1],
+  nRegGrid = 75)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -14,6 +15,8 @@ simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1])
 \item{b}{Upper interval boundary}
 
 \item{DGP}{Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.}
+
+\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'.}
 }
 \description{
 This function allows to simulate functional data as used in the simulation study of:

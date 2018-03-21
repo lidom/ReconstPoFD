@@ -4,7 +4,8 @@
 \alias{reconst_fun}
 \title{Reconstruct a single partially observed centered function}
 \usage{
-reconst_fun(cov_la_mat, workGrid, Y_cent_sm_i, U_sm_i, K, pre_smooth = FALSE)
+reconst_fun(cov_la_mat, workGrid, Y_cent_sm_i, U_sm_i, K, pre_smooth = FALSE,
+  messages = FALSE)
 }
 \arguments{
 \item{cov_la_mat}{Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}}
@@ -18,6 +19,8 @@ reconst_fun(cov_la_mat, workGrid, Y_cent_sm_i, U_sm_i, K, pre_smooth = FALSE)
 \item{K}{Truncation parameter}
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
+
+\item{messages}{Print messages? (default=messages=FALSE)}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.

@@ -7,6 +7,7 @@
 #' @param b          Upper interval boundary
 #' @param n_basis    Number of basis functions
 #' @param DGP        Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
 #' @export simuldata
 #' @examples  
 #' a <- 0; b <- 1; m <- 15; n <- 100
@@ -24,29 +25,31 @@
 #' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1]){
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 75){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
   eps_var  <- .20
   ##
   ## Generation of prediction points U
-  U_true_mat    <- matrix(seq(a,b,len=75), 75, n)
+  U_true_mat    <- matrix(seq(a,b,len=nRegGrid), nRegGrid, n)
   U_mat         <- matrix(NA, m, n)
+  A_vec         <- rep(NA, n)
+  B_vec         <- rep(NA, n)
   for(i in 1:n){
     ## Random observed interval
     if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-      A_i  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-      B_i  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
-    }else{A_i = a; B_i = b}
+      A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+      B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+    }else{A_vec[i] = a; B_vec[i] = b}
     ##
     ## sampling 
-    U_mat[,i] <- stats::runif(n=m, min = A_i, max = B_i)
+    U_mat[,i] <- stats::runif(n=m, min = A_vec[i], max = B_vec[i])
     ## ordering
     U_mat[,i] <- unique(U_mat[,i][order(U_mat[,i])])
   }
   ##
-  Y_true_mat <- matrix(NA, 75, n)
+  Y_true_mat <- matrix(NA, nRegGrid, n)
   Y_mat      <- matrix(NA, m, n)
   k_vec      <- 1:n_basis
   for(i in 1:n){
@@ -80,7 +83,10 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
               "Y_list"      = split(Y_mat, rep(1:ncol(Y_mat), each = nrow(Y_mat))), 
               "U_list"      = split(U_mat, rep(1:ncol(U_mat), each = nrow(U_mat))),
               "Y_true_list" = split(Y_true_mat, rep(1:ncol(Y_true_mat), each = nrow(Y_true_mat))), 
-              "U_true_list" = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat)))
+              "U_true_list" = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat))),
+              ##
+              "A_vec"       = A_vec,
+              "B_vec"       = B_vec
   ))
 }
 
@@ -93,6 +99,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' @param a          Lower interval boundary
 #' @param b          Upper interval boundary
 #' @param DGP        Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
 #' @export simuldataKraus
 #' @references 
 #' Kraus, D. (2015). Components and completion of partially observed functional data. 
@@ -120,10 +127,10 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' main="NoMissings & NoNoise", xlim=c(a,b))
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1]){
+simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 75){
   ##
   ## Number of grid points in [a,b]
-  p <- 75
+  p <- nRegGrid
   ##
   Y_mat       <- matrix(NA, p, n)
   U_mat       <- matrix(NA, p, n)
@@ -136,6 +143,9 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1]){
   U_true_list <- vector("list", n)
   ##
   k_vec <- 1:100
+  ##
+  A_vec         <- rep(NA, n)
+  B_vec         <- rep(NA, n)
   ##
   for(i in 1:n){
     if(DGP=='DGP3'){
@@ -160,17 +170,17 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1]){
       }))) + mean_fun(U_vec)
     ## Random subintervals
     if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-      A_i  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.4))
-      B_i  <- stats::runif(n = 1, min = (b- (b-a) * 0.4), max = b)
-    }else{A_i = a; B_i = b}
+      A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+      B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+    }else{A_vec[i] = a; B_vec[i] = b}
     ##
-    Y_true_vec         <- Y_vec
-    Y_vec[U_vec < A_i] <- NA
-    Y_vec[U_vec > B_i] <- NA
+    Y_true_vec              <- Y_vec
+    Y_vec[U_vec < A_vec[i]] <- NA
+    Y_vec[U_vec > B_vec[i]] <- NA
     ##
-    U_true_vec              <- U_vec
-    U_vec[U_true_vec < A_i] <- NA
-    U_vec[U_true_vec > B_i] <- NA
+    U_true_vec                   <- U_vec
+    U_vec[U_true_vec < A_vec[i]] <- NA
+    U_vec[U_true_vec > B_vec[i]] <- NA
     ##------------------------- 
     # ## Kraus-Version (contains 'holes' that cannot be used with our method so far)
     # d=1.4; f=0.2
@@ -199,7 +209,11 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1]){
               "Y_true_mat"  = Y_true_mat, 
               "U_true_mat"  = U_true_mat,
               "Y_true_list" = Y_true_list, 
-              "U_true_list" = U_true_list))
+              "U_true_list" = U_true_list,
+              ##
+              "A_vec"       = A_vec,
+              "B_vec"       = B_vec
+              ))
 }
 
 

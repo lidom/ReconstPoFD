@@ -18,15 +18,20 @@ Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77
 }
 \examples{
  
-a <- 0; b <- 10; p <- 51; n <- 100
-SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+a <- 0; b <- 1; n <- 100
+SimDat <- simuldataKraus(n = n, a = a, b = b)
 ## 
-Y_mat <- SimDat[['Y_mat']]
+Y_mat       <- SimDat[['Y_mat']]
+U_mat       <- SimDat[['U_mat']]
+U_true_mat  <- SimDat[['U_true_mat']]
 ##
-reconst_mat <- reconstructKraus(Y_mat)
+result        <- reconstructKraus(X_mat = Y_mat)
+Y_reconst_mat <- result[['X_reconst_mat']]
 ##
 par(mfrow=c(2,1))
-matplot(Y_mat[,1:5],       col=gray(.5), type="l", main="Original Data")
-matplot(reconst_mat[,1:5], col=gray(.5), type="l")
+matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+main="Original Data", ylab="", xlab="")
+matplot(x=U_true_mat[,1:5], y=Y_reconst_mat[,1:5], col=gray(.5), 
+type="l", main="Kraus (2015)", ylab="", xlab="")
 par(mfrow=c(1,1))
 }

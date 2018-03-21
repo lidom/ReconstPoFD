@@ -5,7 +5,7 @@
 \title{Simulate Data}
 \usage{
 simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
-  DGP = c("DGP1", "DGP2")[1])
+  DGP = c("DGP1", "DGP2")[1], nRegGrid = 75)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -19,6 +19,8 @@ simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
 \item{n_basis}{Number of basis functions}
 
 \item{DGP}{Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores.}
+
+\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'.}
 }
 \description{
 This function allows to simulate partially observed functional data.

@@ -6,7 +6,8 @@
 #' @param K           Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
 #' @param K_max       Maximum K (used in the AIC-type criterion)
 #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function).
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
+#' @param messages    Printing messages? (default: messages=FALSE)
 #' @export reconstruct
 #' @examples  
 #' a <- 0; b <- 1; n <- 100
@@ -17,16 +18,16 @@
 #' ##
 #' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
 #' pre_smooth = TRUE, nRegGrid = 75)
-#' Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
+#' Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['x_reconst_list']]), 
+#' U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 #' ##
 #' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
 #' pre_smooth = FALSE, nRegGrid = 75)
-#' Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+#' Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['x_reconst_list']]), 
+#' U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 #' ##
 #' par(mfrow=c(3,1))
@@ -42,7 +43,8 @@ reconstruct <- function(Ly,
                         K          = NULL,
                         K_max      = 4,
                         pre_smooth = FALSE,
-                        nRegGrid   = 51)
+                        nRegGrid   = 51,
+                        messages   = FALSE)
 {
   ##
   n        <- length(Ly)
@@ -92,7 +94,8 @@ reconstruct <- function(Ly,
                        Lu          = Lu,
                        cov_la_mat  = cov_est_mat,
                        workGrid    = workGrid,
-                       K_max       = K_max)
+                       K_max       = K_max,
+                       messages    = messages)
     K <- K_AIC
   }else{K_AIC <- NULL}
   
@@ -118,7 +121,8 @@ reconstruct <- function(Ly,
                         Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,i])), 
                         U_sm_i      = c(stats::na.omit(U_mat[,i])), 
                         K           = K, 
-                        pre_smooth  = pre_smooth)
+                        pre_smooth  = pre_smooth,
+                        messages    = messages)
     ##
     x_tmp      <- tmp[['x_reconst']]
     y_cent_tmp <- tmp[['y_reconst']]
@@ -145,13 +149,15 @@ reconstruct <- function(Ly,
 #' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
 #' @param K           Truncation parameter
 #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @param messages    Print messages? (default=messages=FALSE)
 reconst_fun <- function(
   cov_la_mat,     
   workGrid,    
   Y_cent_sm_i,    
   U_sm_i,         
   K,              
-  pre_smooth=FALSE
+  pre_smooth = FALSE,
+  messages   = FALSE  
   ## pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^\ast)
   ## pre_smooth==FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: L)
 ){
@@ -173,7 +179,9 @@ reconst_fun <- function(
   evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
   ##
   if(length(eval_sm_compl)<K){
-    warning("Less non-negative eigenvalues than K.")
+    if(messages){
+      warning("Less non-negative eigenvalues than K. Therefore, K is set to the number of non-negative eigenvalues.")
+    }
     K  <- length(eval_sm_compl)
   }
   ## Standardize direction of eigenfunctions
@@ -195,9 +203,12 @@ reconst_fun <- function(
   }
   ## 'Small' PC-scores (OLS-approach)
   xi_sm_i         <- unname(c(stats::lm(c(stats::na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
-  ## Refitting (only of effect in the more noisy first run)
-  Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
-  xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
+  ## ---------------------------------------------------------------
+  ## Produced Errors:
+  # ## Refitting (only of effect in the more noisy first run)
+  # Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
+  # xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
+  ## ----------------------------------------------------------------
   ##
   ## Recovering: ###########################
   reconst_ls_vec    <- rep(0, length(workGrid))
@@ -233,12 +244,14 @@ reconst_fun <- function(
 #' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
 #' @param K_max       Maximum K (truncation parameter)
 #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @param messages    Print messages? (default=messages=FALSE)
 K_aic_fun <- function(Ly_cent, 
                       Lu,
                       cov_la_mat,
                       workGrid,
                       K_max      = 4,
-                      pre_smooth = FALSE)
+                      pre_smooth = FALSE,
+                      messages   = FALSE)
 {
   n <- length(Ly_cent)
   ## #########################################################
@@ -266,7 +279,7 @@ K_aic_fun <- function(Ly_cent,
   ## ############################
   AIC.vec <- rep(NA,K_max)
   ##
-  for(K in 1:K_max){
+  for(K_iter in 1:K_max){
     RSS.vec <- rep(NA,n)
     L.vec   <- rep(NA,n)
     for(i in 1:n){ 
@@ -279,15 +292,16 @@ K_aic_fun <- function(Ly_cent,
                                  workGrid       = workGrid, 
                                  Y_cent_sm_i    = Y_cent_sm_i[lo.half], 
                                  U_sm_i         = U_sm_i[lo.half], 
-                                 K              = K,
-                                 pre_smooth     = pre_smooth)
+                                 K              = K_iter,
+                                 pre_smooth     = pre_smooth, 
+                                 messages       = messages)
       ##
       y_fit      <- List_obj[['y_reconst']] #+ mu_est_fun(List_obj[['x_reconst']])
       ## RSS.vec[i] <- sum((y_fit[!is.na(Lu[[i]])][up.half] - (Y_cent_sm_i[up.half] + mu_norm_est_fun(U_sm_i)[up.half]))^2)
       RSS.vec[i] <- sum((y_fit[!is.na(Lu[[i]])][up.half] - Y_cent_sm_i[up.half] )^2)
       L.vec[i]   <- -(n*log(2*pi)/2)-(n*log(sig2_GSJ_eps)/2)-(RSS.vec[i]/(2*sig2_GSJ_eps))
     }
-    AIC.vec[K] <- -sum(L.vec) + K 
+    AIC.vec[K_iter] <- -sum(L.vec) + K_iter 
   }
   K_AIC <- which.min(AIC.vec)
   return(K_AIC)

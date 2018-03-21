@@ -5,7 +5,7 @@
 \title{Reconstruct partially observed functions}
 \usage{
 reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
-  nRegGrid = 51)
+  nRegGrid = 51, messages = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -18,32 +18,41 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
 
-\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function).}
+\item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.}
+
+\item{messages}{Printing messages? (default: messages=FALSE)}
 }
 \description{
 This function allows you to reconstruct the missing parts of a function given the observed parts.
 }
 \examples{
  
-a <- 0; b <- 10; n <- 100
+a <- 0; b <- 1; n <- 100
 SimDat   <- simuldataKraus(n = n, a = a, b = b)
 ## 
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 ##
 reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
-pre_smooth = TRUE, nRegGrid = p)
-reconst_mat_1    <- matrix(unlist(reconst_result_1[['y_reconst_list']]), 
+pre_smooth = TRUE, nRegGrid = 75)
+Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
 nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 ##
 reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
-pre_smooth = FALSE, nRegGrid = p)
-reconst_mat_2    <- matrix(unlist(reconst_result_2[['y_reconst_list']]), 
+pre_smooth = FALSE, nRegGrid = 75)
+Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
 nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 ##
 par(mfrow=c(3,1))
-matplot(Y_mat[,1:5],         ylab="", col=gray(.5), type="l", main="Orig. Data")
-matplot(reconst_mat_1[,1:5], ylab="", col=gray(.5), type="l")
-matplot(reconst_mat_2[,1:5], ylab="", col=gray(.5), type="l")
+matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
+main="Orig. Data", xlim=c(a,b))
+matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
+type="l", main="pre_smooth=TRUE", ylab="", xlab="", xlim=c(a,b))
+matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
+type="l", main="pre_smooth=FALSE", ylab="", xlab="", xlim=c(a,b))
 par(mfrow=c(1,1))
 }

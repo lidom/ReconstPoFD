@@ -7,16 +7,21 @@
 #' @param alpha      Ridge parameter. If alpha = NULL (default), an optimal alpha is determined by GCV
 #' @export reconstructKraus
 #' @examples  
-#' a <- 0; b <- 10; p <- 51; n <- 100
-#' SimDat   <- simuldataKraus(p = p, n = n, a = a, b = b)
+#' a <- 0; b <- 1; n <- 100
+#' SimDat <- simuldataKraus(n = n, a = a, b = b)
 #' ## 
-#' Y_mat <- SimDat[['Y_mat']]
+#' Y_mat       <- SimDat[['Y_mat']]
+#' U_mat       <- SimDat[['U_mat']]
+#' U_true_mat  <- SimDat[['U_true_mat']]
 #' ##
-#' reconst_mat <- reconstructKraus(Y_mat)
+#' result        <- reconstructKraus(X_mat = Y_mat)
+#' Y_reconst_mat <- result[['X_reconst_mat']]
 #' ##
 #' par(mfrow=c(2,1))
-#' matplot(Y_mat[,1:5],       col=gray(.5), type="l", main="Original Data")
-#' matplot(reconst_mat[,1:5], col=gray(.5), type="l")
+#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+#' main="Original Data", ylab="", xlab="")
+#' matplot(x=U_true_mat[,1:5], y=Y_reconst_mat[,1:5], col=gray(.5), 
+#' type="l", main="Kraus (2015)", ylab="", xlab="")
 #' par(mfrow=c(1,1))
 reconstructKraus <- function(X_mat, alpha = NULL){
   ##
@@ -27,6 +32,8 @@ reconstructKraus <- function(X_mat, alpha = NULL){
   ##
   NonNA_fcts    <- apply(X_mat,2,function(x)!any(is.na(x)))
   X_Compl_mat   <- X_mat[,NonNA_fcts]
+  alpha_vec     <- rep(NA, n) 
+  df_vec        <- rep(NA, n) 
   ##
   for(i in 1:n){
     X_tmp      <- X_mat[,i]
@@ -35,21 +42,29 @@ reconstructKraus <- function(X_mat, alpha = NULL){
     O_bool_vec <- !M_bool_vec
     ##
     if(is.null(alpha)){
-      alpha <- stats::optimize(f = function(alpha){gcvKraus(cov_mat     = cov_mat, 
-                                                            mean_vec    = mean_vec, 
-                                                            X_Compl_mat = X_Compl_mat, 
-                                                            M_bool_vec  = M_bool_vec, 
-                                                            alpha       = alpha)},
-                               interval = c(.Machine$double.eps, sum(diag(cov_mat))*n), maximum = FALSE)$minimum
+      alpha_vec[i] <- stats::optimize(f = function(alpha){gcvKraus(cov_mat     = cov_mat, 
+                                                                   mean_vec    = mean_vec, 
+                                                                   X_Compl_mat = X_Compl_mat, 
+                                                                   M_bool_vec  = M_bool_vec, 
+                                                                   alpha       = alpha)},
+                                      interval = c(.Machine$double.eps, sum(diag(cov_mat))*n), maximum = FALSE)$minimum
+    }else{
+      alpha_vec[i] <- alpha
     }
     ##
     result_tmp <- reconstKraus_fun(cov_mat    = cov_mat, 
                                    X_cent_vec = c(X_tmp - mean_vec), 
-                                   alpha      = alpha)
+                                   alpha      = alpha_vec[i])
     ##
     X_reconst_mat[,i]  <- c(result_tmp[['X_cent_reconst_vec']] + mean_vec)
+    df_vec[i]          <- result_tmp[['df']]
   }
-  return(X_reconst_mat)
+  return(list("X_reconst_mat"    = X_reconst_mat,
+              "alpha_gcv_median" = ifelse( is.null(alpha), stats::median(alpha_vec), NA), 
+              "df_gcv_median"    = ifelse( is.null(alpha), stats::median(df_vec),    NA),
+              "alpha"            = ifelse(!is.null(alpha), alpha,     NA), 
+              "df"               = ifelse(!is.null(alpha), df_vec[1], NA)
+              ))
 }
 
 
@@ -87,12 +102,12 @@ covKraus <- function(X_mat){
 ## -------------------------------------------------------------------------
 reconstKraus_fun <- function(cov_mat, X_cent_vec, alpha=1e-4){
   ##
-  M_bool_vec   <- is.na(X_cent_vec)
-  O_bool_vec   <- !M_bool_vec
-  p            <- nrow(cov_mat)
+  M_bool_vec       <- is.na(X_cent_vec)
+  O_bool_vec       <- !M_bool_vec
+  p                <- nrow(cov_mat)
   ##
-  covMO_mat    <- cov_mat[M_bool_vec, O_bool_vec] 
-  covOO_mat    <- cov_mat[O_bool_vec, O_bool_vec]
+  covMO_mat        <- cov_mat[M_bool_vec, O_bool_vec] 
+  covOO_mat        <- cov_mat[O_bool_vec, O_bool_vec]
   ##
   covOO_a_mat      <- covOO_mat + alpha * diag(p)[O_bool_vec, O_bool_vec]
   covOO_a_mat_inv  <- solve(covOO_a_mat)

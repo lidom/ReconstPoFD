@@ -2,3 +2,4 @@ Make_package.R
 Generate_Data.R
 ReconstPoFD/ReconstPoFD.Rproj
 .Rhistory
+*.RData

@@ -1,13 +1,14 @@
 #' Reconstruct partially observed functions
 #'
 #' This function allows you to reconstruct the missing parts of a function given the observed parts.
-#' @param Ly          List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}
-#' @param Lu          List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param K           Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
-#' @param K_max       Maximum K (used in the AIC-type criterion)
-#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
-#' @param messages    Printing messages? (default: messages=FALSE)
+#' @param Ly           List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}
+#' @param Lu           List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+#' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
+#' @param K_max        Maximum K (used in the AIC-type criterion)
+#' @param pre_smooth   If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
+#' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
+#' @param messages     Printing messages? (default: messages=FALSE)
 #' @export reconstruct
 #' @examples  
 #' a <- 0; b <- 1; n <- 100
@@ -40,14 +41,18 @@
 #' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
                         Lu,
-                        K          = NULL,
-                        K_max      = 4,
-                        pre_smooth = FALSE,
-                        nRegGrid   = 51,
-                        messages   = FALSE)
+                        K            = NULL,
+                        K_max        = 4,
+                        pre_smooth   = FALSE,
+                        reconst_fcts = NULL,
+                        nRegGrid     = 51,
+                        messages     = FALSE)
 {
   ##
-  n        <- length(Ly)
+  n  <- length(Ly)
+  if(is.null(reconst_fcts)){
+    reconst_fcts <- 1:n
+  }
   ##
   ## Estimate Mean and Covariance 
   fdapace_obj <- fdapace::FPCA(Ly    = Ly, 
@@ -112,10 +117,10 @@ reconstruct <- function(Ly,
   }
   ## Reconstructing all functions
   ## As list, since this facilitates a future generalization to 'random m'
-  Y_reconst_list  <- vector("list", n)
-  U_reconst_list  <- vector("list", n)
+  Y_reconst_list  <- vector("list", length(reconst_fcts))
+  U_reconst_list  <- vector("list", length(reconst_fcts))
   ##
-  for(i in 1:n){
+  for(i in 1:reconst_fcts){
     tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
                         workGrid    = workGrid, 
                         Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,i])), 
@@ -135,7 +140,8 @@ reconstruct <- function(Ly,
   return(list(
     "Y_reconst_list"  = Y_reconst_list,
     "U_reconst_list"  = U_reconst_list,
-    "K_AIC"           = K_AIC,
+    "K_AIC"           = ifelse(is.null(K),     K_AIC, NA),
+    "K"               = ifelse(is.null(K_AIC), K,     NA),
     "fdapace_obj"     = fdapace_obj))
 }
 
@@ -452,10 +458,11 @@ iter_reconst_fun <- function(cov_la_mat,
       Y_cent_sm2_i    <- Y_cent_la_i[Y_slct_sm2_vec]  
       ##
       pred2.tmp    <- reconst_fun(cov_la_mat      = cov_la_mat, 
-                                               workGrid     = workGrid, 
-                                               Y_cent_sm_i     = Y_cent_sm2_i, 
-                                               U_sm_i          = U_sm2_i, 
-                                               K               = K)
+                                  workGrid        = workGrid, 
+                                  Y_cent_sm_i     = Y_cent_sm2_i, 
+                                  U_sm_i          = U_sm2_i, 
+                                  K               = K)
+      ##
       U_la2_i      <- pred2.tmp[['x_reconst']]
       Y_cent_la2_i <- pred2.tmp[['y_reconst']]
       ##

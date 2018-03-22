@@ -3,8 +3,9 @@
 #' This function allows to reconstruct partially observed functional data as proposed in: 
 #' Kraus, D. (2015). Components and completion of partially observed functional data. 
 #' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
-#' @param X_mat      pxn matrix (p: number of discretization points, n=number of functions
-#' @param alpha      Ridge parameter. If alpha = NULL (default), an optimal alpha is determined by GCV
+#' @param X_mat        pxn matrix (p: number of discretization points, n=number of functions
+#' @param alpha        Ridge parameter. If alpha = NULL (default), an optimal alpha is determined by GCV
+#' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
 #' @export reconstructKraus
 #' @examples  
 #' a <- 0; b <- 1; n <- 100
@@ -23,20 +24,25 @@
 #' matplot(x=U_true_mat[,1:5], y=Y_reconst_mat[,1:5], col=gray(.5), 
 #' type="l", main="Kraus (2015)", ylab="", xlab="")
 #' par(mfrow=c(1,1))
-reconstructKraus <- function(X_mat, alpha = NULL){
+reconstructKraus <- function(X_mat, 
+                             alpha        = NULL,
+                             reconst_fcts = NULL){
   ##
   mean_vec      <- meanKraus(X_mat)
   cov_mat       <- covKraus(X_mat)
   n             <- ncol(X_mat)
-  X_reconst_mat <- X_mat
+  if(is.null(reconst_fcts)){
+    reconst_fcts <- 1:n
+  }
+  X_reconst_mat <- X_mat[,reconst_fcts]
   ##
   NonNA_fcts    <- apply(X_mat,2,function(x)!any(is.na(x)))
   X_Compl_mat   <- X_mat[,NonNA_fcts]
-  alpha_vec     <- rep(NA, n) 
-  df_vec        <- rep(NA, n) 
+  alpha_vec     <- rep(NA, length(reconst_fcts)) 
+  df_vec        <- rep(NA, length(reconst_fcts)) 
   ##
-  for(i in 1:n){
-    X_tmp      <- X_mat[,i]
+  for(i in 1:length(reconst_fcts)){
+    X_tmp      <- X_mat[,reconst_fcts[i]]
     ##
     M_bool_vec <- is.na(X_tmp)
     O_bool_vec <- !M_bool_vec

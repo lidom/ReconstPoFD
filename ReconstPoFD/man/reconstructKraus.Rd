@@ -4,12 +4,14 @@
 \alias{reconstructKraus}
 \title{Reconstruct functional data as proposed by Kraus (JRSSB, 2015)}
 \usage{
-reconstructKraus(X_mat, alpha = NULL)
+reconstructKraus(X_mat, alpha = NULL, reconst_fcts = NULL)
 }
 \arguments{
 \item{X_mat}{pxn matrix (p: number of discretization points, n=number of functions}
 
 \item{alpha}{Ridge parameter. If alpha = NULL (default), an optimal alpha is determined by GCV}
+
+\item{reconst_fcts}{A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.}
 }
 \description{
 This function allows to reconstruct partially observed functional data as proposed in: 

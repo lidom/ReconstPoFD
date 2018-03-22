@@ -5,7 +5,7 @@
 \title{Reconstruct partially observed functions}
 \usage{
 reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
-  nRegGrid = 51, messages = FALSE)
+  reconst_fcts = NULL, nRegGrid = 51, messages = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -17,6 +17,8 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
 \item{K_max}{Maximum K (used in the AIC-type criterion)}
 
 \item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
+
+\item{reconst_fcts}{A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.}
 
 \item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.}
 

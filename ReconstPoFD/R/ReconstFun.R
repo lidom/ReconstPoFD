@@ -120,11 +120,11 @@ reconstruct <- function(Ly,
   Y_reconst_list  <- vector("list", length(reconst_fcts))
   U_reconst_list  <- vector("list", length(reconst_fcts))
   ##
-  for(i in 1:reconst_fcts){
+  for(i in 1:length(reconst_fcts)){
     tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
                         workGrid    = workGrid, 
-                        Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,i])), 
-                        U_sm_i      = c(stats::na.omit(U_mat[,i])), 
+                        Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
+                        U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
                         K           = K, 
                         pre_smooth  = pre_smooth,
                         messages    = messages)

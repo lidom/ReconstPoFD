@@ -5,7 +5,7 @@
 \title{Simulate Data}
 \usage{
 simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
-  DGP = c("DGP1", "DGP2")[1], nRegGrid = 75)
+  DGP = c("DGP1", "DGP2")[1], nRegGrid = 75, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -21,6 +21,8 @@ simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
 \item{DGP}{Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores.}
 
 \item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'.}
+
+\item{determ_obs_interv}{Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.}
 }
 \description{
 This function allows to simulate partially observed functional data.

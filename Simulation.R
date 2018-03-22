@@ -20,6 +20,10 @@ a         <-   0
 b         <-   1
 ## Regular grid points
 nRegGrid  <-  75  
+##
+n_target_fcts <- 5
+##
+determ_obs_interv <- c((a+(b-a)*0.33), (b-(b-a)*0.33))
 ## #######################################
 
 ## #######################################
@@ -39,60 +43,86 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
   for(n in c(100, 200)){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
+      
+      ## a <- 0; b <- 1; DGP <- 'DGP1'; n <- 100; m <- 15; nRegGrid <- 75; B <- 2
+      
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
       ## #######################################################################
-      
+      ## #######################################################################
+      ## Preselecting partially observed target functions for the reconstructions
+      ## #######################################################################
+      if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP1', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      ##
+      target_fcts       <- 1:n_target_fcts
+      ##
+      Y_target_true_mat <- SimDat[['Y_true_mat']]
+      U_target_true_mat <- SimDat[['U_true_mat']]
+      ##
+      Y_target_mat      <- SimDat[['Y_mat']]
+      U_target_mat      <- SimDat[['U_mat']]
+      Y_target_list     <- SimDat[['Y_list']]
+      U_target_list     <- SimDat[['U_list']]
+      ##
+      A_target_vec      <- SimDat[['A_vec']]
+      B_target_vec      <- SimDat[['B_vec']]
+      ##
+      missings_target_mat <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts)
+      for(i in 1:n_target_fcts){
+        missings_target_mat[,i] <- c(U_target_true_mat[,i] < A_target_vec[i] | U_target_true_mat[,i] > B_target_vec[i])
+      }       
+      ##
+      Y_PS_FALSE_MC_mat <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
+      Y_PS_TRUE_MC_mat  <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
+      Y_PACE_MC_mat     <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
+      Y_Kraus_MC_mat    <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
+      K_PS_FALSE_MC_vec <- rep(NA, B)
+      K_PS_TRUE_MC_vec  <- rep(NA, B)
+      K_PACE_MC_vec     <- rep(NA, B)
+      df_Kraus_MC_vec   <- rep(NA, B)
+      ##
       ## #######################################################################
       ## Start 'foreach'-loop use "%do%" for a non-parallel loop
       ## #######################################################################
-      sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
+      ## sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
+      for(repet in 1:B){
         ##
-        if(DGP=='DGP1'){
-          SimDat <- ReconstPoFD::simuldata(n = n, m = m, a = a, b = b, n_basis = 10, DGP='DGP1', nRegGrid = nRegGrid)
-        }
-        if(DGP=='DGP2'){
-          SimDat <- ReconstPoFD::simuldata(n = n, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid)
-        }
-        if(DGP=='DGP3'){
-          SimDat <- ReconstPoFD::simuldataKraus(n = n, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid)
-        }
-        if(DGP=='DGP4'){
-          SimDat <- ReconstPoFD::simuldataKraus(n = n, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid)
-        }
+        if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP1', nRegGrid = nRegGrid)}
+        if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid)}
+        if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldataKraus(n = n-n_target_fcts, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid)}
+        if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldataKraus(n = n-n_target_fcts, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid)}
         ##
-        Y_true_mat <- SimDat[['Y_true_mat']]
-        U_true_mat <- SimDat[['U_true_mat']]
-        ##
-        Y_mat      <- SimDat[['Y_mat']]
-        U_mat      <- SimDat[['U_mat']]
-        Y_list     <- SimDat[['Y_list']]
-        U_list     <- SimDat[['U_list']]
-        ##
-        A_vec      <- SimDat[['A_vec']]
-        B_vec      <- SimDat[['B_vec']]
+        Y_mat      <- cbind(Y_target_mat, SimDat[['Y_mat']])
+        U_mat      <- cbind(U_target_mat, SimDat[['U_mat']])
+        Y_list     <- c(Y_target_list,    SimDat[['Y_list']])
+        U_list     <- c(U_target_list,    SimDat[['U_list']])
         ##
         ## Reconstruction Operator 'without Pre-Smoothing'
-        result_PS_FALSE <- ReconstPoFD::reconstruct(Ly         = Y_list, 
-                                                    Lu         = U_list,
-                                                    K          = NULL,
-                                                    K_max      = 10,
-                                                    pre_smooth = FALSE,
-                                                    nRegGrid   = nRegGrid)
-        Y_PS_FALSE_mat <- matrix(unlist(result_PS_FALSE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n) 
-        U_PS_FALSE_mat <- matrix(unlist(result_PS_FALSE[['U_reconst_list']]), nrow = nRegGrid, ncol = n) 
-        K_PS_FALSE     <- result_PS_FALSE[['K_AIC']]
+        result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
+                                                    Lu           = U_list,
+                                                    K            = NULL,
+                                                    K_max        = 10,
+                                                    pre_smooth   = FALSE,
+                                                    reconst_fcts = target_fcts, 
+                                                    nRegGrid     = nRegGrid)
+        Y_PS_FALSE_mat <- matrix(unlist(result_PS_FALSE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
+        Y_PS_FALSE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PS_FALSE_mat
+        K_PS_FALSE_MC_vec[repet]  <- result_PS_FALSE[['K_AIC']]
         ##
         ## Reconstruction Operator 'with Pre-Smoothing'
-        result_PS_TRUE <- ReconstPoFD::reconstruct(Ly         = Y_list, 
-                                                   Lu         = U_list,
-                                                   K          = NULL,
-                                                   K_max      = 10,
-                                                   pre_smooth = TRUE,
-                                                   nRegGrid   = nRegGrid)
-        Y_PS_TRUE_mat <- matrix(unlist(result_PS_TRUE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n) 
-        U_PS_TRUE_mat <- matrix(unlist(result_PS_TRUE[['U_reconst_list']]), nrow = nRegGrid, ncol = n) 
-        K_PS_TRUE     <- result_PS_TRUE[['K_AIC']]
+        result_PS_TRUE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
+                                                   Lu           = U_list,
+                                                   K            = NULL,
+                                                   K_max        = 10,
+                                                   pre_smooth   = TRUE,
+                                                   reconst_fcts = target_fcts,
+                                                   nRegGrid     = nRegGrid)
+        Y_PS_TRUE_mat <- matrix(unlist(result_PS_TRUE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
+        Y_PS_TRUE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PS_TRUE_mat
+        K_PS_TRUE_MC_vec[repet]  <- result_PS_TRUE[['K_AIC']]
         ## 
         ## PACE of Yao, Müller, Wang (2005, JASA)
         result_PACE <- fdapace::FPCA(Ly    = Y_list, 
@@ -103,53 +133,56 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
                                        "methodMuCovEst" = "smooth",
                                        "nRegGrid"       = nRegGrid
                                      ))
-        Y_PACE_mat <- t(fitted(result_PACE))
-        U_PACE_mat <- matrix(result_PACE$workGrid, nrow = nRegGrid, ncol = n)
-        K_PACE     <- length(result_PACE$lambda)
+        Y_PACE_mat <- t(fitted(result_PACE))[,target_fcts]
+        Y_PACE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PACE_mat
+        K_PACE_MC_vec[repet]  <- length(result_PACE$lambda)
         ##
         if(any(DGP==c('DGP3','DGP4'))){
           ## Reconstruction Operator of Kraus (2015, JRSSB)
-          result_Kraus         <- ReconstPoFD::reconstructKraus(X_mat = Y_mat)
-          Y_Kraus_mat          <- result_Kraus[['X_reconst_mat']]
-          df_gcv_median_Kraus  <- result_Kraus[['df_gcv_median']]
-        }else{df_gcv_median_Kraus <- NA}
-        
-        
-        ## Reconstruction errors
-        L2_PS_FALSE_vec  <- rep(NA, n)
-        L2_PS_TRUE_vec   <- rep(NA, n)
-        L2_PACE_vec      <- rep(NA, n)
-        L2_Kraus_vec     <- rep(NA, n)
-        for(i in 1:n){
-          ##
-          missing_vec <- rep(FALSE, nRegGrid)
-          missing_vec[U_true_mat[,i] < A_vec[i]] <- TRUE
-          missing_vec[U_true_mat[,i] > B_vec[i]] <- TRUE
-          ## Integrated squared errors
-          L2_PS_FALSE_vec[i] <- sum(c(Y_PS_FALSE_mat[missing_vec,i] - Y_true_mat[missing_vec,i])^2) * (b-a)/nRegGrid
-          L2_PS_TRUE_vec[i]  <- sum(c(Y_PS_TRUE_mat[missing_vec,i]  - Y_true_mat[missing_vec,i])^2) * (b-a)/nRegGrid
-          L2_PACE_vec[i]     <- sum(c(Y_PACE_mat[missing_vec,i]     - Y_true_mat[missing_vec,i])^2) * (b-a)/nRegGrid
-          if(any(DGP==c('DGP3','DGP4'))){
-            L2_Kraus_vec[i]  <- sum(c(Y_Kraus_mat[missing_vec,i]    - Y_true_mat[missing_vec,i])^2) * (b-a)/nRegGrid
-          }
+          result_Kraus            <- ReconstPoFD::reconstructKraus(X_mat = Y_mat, reconst_fcts = target_fcts)
+          Y_Kraus_mat             <- result_Kraus[['X_reconst_mat']]
+          Y_Kraus_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_Kraus_mat
+          df_Kraus_MC_vec[repet]  <- result_Kraus[['df_gcv_median']]
         }
+        ##
         ## ##################################################################
-        if(B %% 10) cat("repet/B=",repet,"/",B,"\n")
+        if(repet %% 10) cat("repet/B=",repet,"/",B,"\n")
         ## ##################################################################
-        ## Return the results (Mean integrated squared errors and K)
-        c(mean(L2_PS_FALSE_vec), mean(L2_PS_TRUE_vec), mean(L2_PACE_vec), mean(L2_Kraus_vec), K_PS_FALSE, K_PS_TRUE, K_PACE, df_gcv_median_Kraus)
-        ## ##################################################################
-      } ## End of foreach-loop
-      ## Row-names:
-      rownames(sim.results) <- c("ML2_PS_FALSE", "ML2_PS_TRUE", "ML2_PACE", "ML2_Kraus", "K_PS_FALSE", "K_PS_TRUE", "K_PACE", "df_gcv_median_Kraus")
-      
-      ## Save results:
-      if(any(DGP==c('DGP1','DGP2'))){
-        save(sim.results, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
+      } ## End of B-loop
+      ##
+      PS_FALSE_Int_Bias_sq_vec <- rep(NA, n_target_fcts)
+      PS_TRUE_Int_Bias_sq_vec  <- rep(NA, n_target_fcts)
+      PACE_Int_Bias_sq_vec     <- rep(NA, n_target_fcts)
+      Kraus_Int_Bias_sq_vec    <- rep(NA, n_target_fcts)
+      ##
+      PS_FALSE_Int_Var_vec     <- rep(NA, n_target_fcts)
+      PS_TRUE_Int_Var_vec      <- rep(NA, n_target_fcts)
+      PACE_Int_Var_vec         <- rep(NA, n_target_fcts)
+      Kraus_Int_Var_vec        <- rep(NA, n_target_fcts)
+      ##
+      Int_Var_vec     <- rep(NA, n_target_fcts)
+      for(i in 1:n_target_fcts){
+        slct_MC_fcts                <- seq(from = i, to = n_target_fcts*B, by=n_target_fcts)
+        slct_M                      <- missings_target_mat[,i]
+        ##
+        PS_FALSE_Int_Bias_sq_vec[i] <- sum(c(rowMeans(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        PS_TRUE_Int_Bias_sq_vec[i]  <- sum(c(rowMeans(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        PACE_Int_Bias_sq_vec[i]     <- sum(c(rowMeans(Y_PACE_MC_mat[    slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        Kraus_Int_Bias_sq_vec[i]    <- sum(c(rowMeans(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        ##
+        PS_FALSE_Int_Var_vec[i]     <- sum(apply(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
+        PS_TRUE_Int_Var_vec[i]      <- sum(apply(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
+        PACE_Int_Var_vec[i]         <- sum(apply(Y_PACE_MC_mat[    slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
+        Kraus_Int_Var_vec[i]        <- sum(apply(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
       }
-      if(any(DGP==c('DGP3','DGP4'))){
-        save(sim.results, file = paste0(DGP,"_n",n,"_simResults.RData"))
-      }
+      ##
+      # ## Save results:
+      # if(any(DGP==c('DGP1','DGP2'))){
+      #   save(sim.results, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
+      # }
+      # if(any(DGP==c('DGP3','DGP4'))){
+      #   save(sim.results, file = paste0(DGP,"_n",n,"_simResults.RData"))
+      # }
     }
   }
 }

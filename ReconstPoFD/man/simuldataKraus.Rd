@@ -5,7 +5,7 @@
 \title{Simulate Data (Adapted from Kraus (2015))}
 \usage{
 simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1],
-  nRegGrid = 75)
+  nRegGrid = 75, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -17,6 +17,8 @@ simuldataKraus(n = 100, a = 0, b = 1, DGP = c("DGP3", "DGP4")[1],
 \item{DGP}{Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.}
 
 \item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'.}
+
+\item{determ_obs_interv}{Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.}
 }
 \description{
 This function allows to simulate functional data as used in the simulation study of:

@@ -1,13 +1,14 @@
 #' Simulate Data 
 #'
 #' This function allows to simulate partially observed functional data. 
-#' @param n          Number of functions
-#' @param m          Number of discretization points 
-#' @param a          Lower interval boundary
-#' @param b          Upper interval boundary
-#' @param n_basis    Number of basis functions
-#' @param DGP        Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
+#' @param n                 Number of functions
+#' @param m                 Number of discretization points 
+#' @param a                 Lower interval boundary
+#' @param b                 Upper interval boundary
+#' @param n_basis           Number of basis functions
+#' @param DGP               Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
+#' @param nRegGrid          Number of grid-points used for the equidistant 'workGrid'.
+#' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples  
 #' a <- 0; b <- 1; m <- 15; n <- 100
@@ -25,7 +26,7 @@
 #' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 75){
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 75, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
@@ -36,12 +37,21 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
   U_mat         <- matrix(NA, m, n)
   A_vec         <- rep(NA, n)
   B_vec         <- rep(NA, n)
+  ##
   for(i in 1:n){
-    ## Random observed interval
-    if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-      A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-      B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
-    }else{A_vec[i] = a; B_vec[i] = b}
+    if(is.null(determ_obs_interv)){
+      ## Random observed interval
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      }else{
+        A_vec[i] = a
+        B_vec[i] = b
+      }
+    }else{
+      A_vec[i] = determ_obs_interv[1]
+      B_vec[i] = determ_obs_interv[2]
+    }
     ##
     ## sampling 
     U_mat[,i] <- stats::runif(n=m, min = A_vec[i], max = B_vec[i])
@@ -100,6 +110,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' @param b          Upper interval boundary
 #' @param DGP        Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.
 #' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
+#' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldataKraus
 #' @references 
 #' Kraus, D. (2015). Components and completion of partially observed functional data. 
@@ -127,7 +138,8 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' main="NoMissings & NoNoise", xlim=c(a,b))
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 75){
+simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 75, determ_obs_interv = NULL)
+{
   ##
   ## Number of grid points in [a,b]
   p <- nRegGrid
@@ -168,11 +180,20 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
         xi1[k] * sqrt(2) * cos(2*pi*k*(U_vec-a)/(b-a)) +
           xi2[k] * sqrt(2) * sin(2*pi*k*(U_vec-a)/(b-a)) 
       }))) + mean_fun(U_vec)
-    ## Random subintervals
-    if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-      A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-      B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
-    }else{A_vec[i] = a; B_vec[i] = b}
+    ##
+    if(is.null(determ_obs_interv)){
+      ## Random observed interval
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      }else{
+        A_vec[i] = a
+        B_vec[i] = b
+      }
+    }else{
+      A_vec[i] = determ_obs_interv[1]
+      B_vec[i] = determ_obs_interv[2]
+    }
     ##
     Y_true_vec              <- Y_vec
     Y_vec[U_vec < A_vec[i]] <- NA
@@ -213,7 +234,7 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
               ##
               "A_vec"       = A_vec,
               "B_vec"       = B_vec
-              ))
+  ))
 }
 
 

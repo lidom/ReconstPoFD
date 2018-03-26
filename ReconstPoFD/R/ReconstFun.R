@@ -95,7 +95,7 @@ reconstruct <- function(Ly,
   ##
   ## K AIC
   if(is.null(K)){
-    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent, 
+    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent,
                        Lu          = Lu,
                        cov_la_mat  = cov_est_mat,
                        workGrid    = workGrid,

@@ -31,8 +31,8 @@ determ_obs_interv <- c((a+(b-a)*0.33), (b-(b-a)*0.33))
 ## Parallel loop might not work for windows!
 ## => use %do% instead of %dopar% (below) 
 ## for a non-parallel loop"
-registerDoParallel(cores=4)
-getDoParWorkers()
+#registerDoParallel(cores=4)
+#getDoParWorkers()
 ## #######################################
 
 
@@ -110,7 +110,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
                                                     nRegGrid     = nRegGrid)
         Y_PS_FALSE_mat <- matrix(unlist(result_PS_FALSE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
         Y_PS_FALSE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PS_FALSE_mat
-        K_PS_FALSE_MC_vec[repet]  <- result_PS_FALSE[['K_AIC']]
+        K_PS_FALSE_MC_vec[repet]  <- result_PS_FALSE[['K']]
         ##
         ## Reconstruction Operator 'with Pre-Smoothing'
         result_PS_TRUE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
@@ -122,7 +122,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
                                                    nRegGrid     = nRegGrid)
         Y_PS_TRUE_mat <- matrix(unlist(result_PS_TRUE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
         Y_PS_TRUE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PS_TRUE_mat
-        K_PS_TRUE_MC_vec[repet]  <- result_PS_TRUE[['K_AIC']]
+        K_PS_TRUE_MC_vec[repet]  <- result_PS_TRUE[['K']]
         ## 
         ## PACE of Yao, Müller, Wang (2005, JASA)
         result_PACE <- fdapace::FPCA(Ly    = Y_list, 
@@ -142,7 +142,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
           result_Kraus            <- ReconstPoFD::reconstructKraus(X_mat = Y_mat, reconst_fcts = target_fcts)
           Y_Kraus_mat             <- result_Kraus[['X_reconst_mat']]
           Y_Kraus_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_Kraus_mat
-          df_Kraus_MC_vec[repet]  <- result_Kraus[['df_gcv_median']]
+          df_Kraus_MC_vec[repet]  <- result_Kraus[['df_median']]
         }
         ##
         ## ##################################################################
@@ -150,11 +150,12 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         ## ##################################################################
       } ## End of B-loop
       ##
+      ## Integrated squared bias:
       PS_FALSE_Int_Bias_sq_vec <- rep(NA, n_target_fcts)
       PS_TRUE_Int_Bias_sq_vec  <- rep(NA, n_target_fcts)
       PACE_Int_Bias_sq_vec     <- rep(NA, n_target_fcts)
       Kraus_Int_Bias_sq_vec    <- rep(NA, n_target_fcts)
-      ##
+      ## Integrated variance
       PS_FALSE_Int_Var_vec     <- rep(NA, n_target_fcts)
       PS_TRUE_Int_Var_vec      <- rep(NA, n_target_fcts)
       PACE_Int_Var_vec         <- rep(NA, n_target_fcts)

@@ -1,6 +1,6 @@
 Package: ReconstPoFD
 Title: Reconstructing Partially Observed Functional Data
-Version: 0.0.17
+Version: 0.0.19
 Author: Dominik Liebl [aut, cre]
 Maintainer: Dominik Liebl <r.packages.mail@gmail.com>
 Description: This R-package contains the implementations the methods introduced in: 'One the optimal reconstruction of partially observed functional data' by Alois Kneip and Dominik Liebl (arXiv:1710.10099).

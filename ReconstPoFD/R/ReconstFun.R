@@ -140,9 +140,9 @@ reconstruct <- function(Ly,
   return(list(
     "Y_reconst_list"  = Y_reconst_list,
     "U_reconst_list"  = U_reconst_list,
-    "K_AIC"           = ifelse(is.null(K),     K_AIC, NA),
-    "K"               = ifelse(is.null(K_AIC), K,     NA),
-    "fdapace_obj"     = fdapace_obj))
+    "K"               = K,
+    "fdapace_obj"     = fdapace_obj
+    ))
 }
 
 

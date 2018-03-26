@@ -66,10 +66,8 @@ reconstructKraus <- function(X_mat,
     df_vec[i]          <- result_tmp[['df']]
   }
   return(list("X_reconst_mat"    = X_reconst_mat,
-              "alpha_gcv_median" = ifelse( is.null(alpha), stats::median(alpha_vec), NA), 
-              "df_gcv_median"    = ifelse( is.null(alpha), stats::median(df_vec),    NA),
-              "alpha"            = ifelse(!is.null(alpha), alpha,     NA), 
-              "df"               = ifelse(!is.null(alpha), df_vec[1], NA)
+              "alpha_median"     = stats::median(alpha_vec), 
+              "df_median"        = stats::median(df_vec)
               ))
 }
 

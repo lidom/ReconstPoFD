@@ -19,7 +19,7 @@ a         <-   0
 ## Upper-value of the total domain
 b         <-   1
 ## Regular grid points
-nRegGrid  <-  75  
+nRegGrid  <-  51 
 ##
 n_target_fcts <- 5
 ##
@@ -44,7 +44,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP1'; n <- 100; m <- 15; nRegGrid <- 75; B <- 2
+      ## a <- 0; b <- 1; DGP <- 'DGP3'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -77,6 +77,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       ##
       Y_PS_FALSE_MC_mat <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       Y_PS_TRUE_MC_mat  <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
+      Y_CEScores_MC_mat <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       Y_PACE_MC_mat     <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       Y_Kraus_MC_mat    <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       K_PS_FALSE_MC_vec <- rep(NA, B)
@@ -104,8 +105,8 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                     Lu           = U_list,
                                                     K            = NULL,
-                                                    K_max        = 10,
-                                                    pre_smooth   = FALSE,
+                                                    K_max        = 5,
+                                                    method       = "PS_FALSE",
                                                     reconst_fcts = target_fcts, 
                                                     nRegGrid     = nRegGrid)
         Y_PS_FALSE_mat <- matrix(unlist(result_PS_FALSE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
@@ -116,14 +117,26 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         result_PS_TRUE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                    Lu           = U_list,
                                                    K            = NULL,
-                                                   K_max        = 10,
-                                                   pre_smooth   = TRUE,
+                                                   K_max        = 5,
+                                                   method       = "PS_TRUE",
                                                    reconst_fcts = target_fcts,
                                                    nRegGrid     = nRegGrid)
         Y_PS_TRUE_mat <- matrix(unlist(result_PS_TRUE[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
         Y_PS_TRUE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PS_TRUE_mat
         K_PS_TRUE_MC_vec[repet]  <- result_PS_TRUE[['K']]
         ## 
+        ## Reconstruction Operator 'without Pre-Smoothing'
+        result_CEScores <- ReconstPoFD::reconstruct(Ly           = Y_list, 
+                                                    Lu           = U_list,
+                                                    K            = NULL,
+                                                    K_max        = 5,
+                                                    method       = "CEScores",
+                                                    reconst_fcts = target_fcts, 
+                                                    nRegGrid     = nRegGrid)
+        Y_CEScores_mat <- matrix(unlist(result_CEScores[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
+        Y_CEScores_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_CEScores_mat
+        ## K is as in PACE
+        ##
         ## PACE of Yao, Müller, Wang (2005, JASA)
         result_PACE <- fdapace::FPCA(Ly    = Y_list, 
                                      Lt    = U_list, 
@@ -131,6 +144,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
                                        "dataType"       = "Sparse", 
                                        "kernel"         = "gauss",
                                        "methodMuCovEst" = "smooth",
+                                       "error"          = TRUE,#ifelse(any(DGP==c('DGP1','DGP2')),TRUE,FALSE),
                                        "nRegGrid"       = nRegGrid
                                      ))
         Y_PACE_mat <- t(fitted(result_PACE))[,target_fcts]
@@ -151,28 +165,49 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       } ## End of B-loop
       ##
       ## Integrated squared bias:
-      PS_FALSE_Int_Bias_sq_vec <- rep(NA, n_target_fcts)
-      PS_TRUE_Int_Bias_sq_vec  <- rep(NA, n_target_fcts)
-      PACE_Int_Bias_sq_vec     <- rep(NA, n_target_fcts)
-      Kraus_Int_Bias_sq_vec    <- rep(NA, n_target_fcts)
+      PS_FALSE_Int_BiasSq_vec <- rep(NA, n_target_fcts)
+      PS_TRUE_Int_BiasSq_vec  <- rep(NA, n_target_fcts)
+      CEScores_Int_BiasSq_vec <- rep(NA, n_target_fcts)
+      PACE_Int_BiasSq_vec     <- rep(NA, n_target_fcts)
+      Kraus_Int_BiasSq_vec    <- rep(NA, n_target_fcts)
       ## Integrated variance
       PS_FALSE_Int_Var_vec     <- rep(NA, n_target_fcts)
       PS_TRUE_Int_Var_vec      <- rep(NA, n_target_fcts)
+      CEScores_Int_Var_vec     <- rep(NA, n_target_fcts)
       PACE_Int_Var_vec         <- rep(NA, n_target_fcts)
       Kraus_Int_Var_vec        <- rep(NA, n_target_fcts)
       ##
-      Int_Var_vec     <- rep(NA, n_target_fcts)
       for(i in 1:n_target_fcts){
+        ## i <- 2
         slct_MC_fcts                <- seq(from = i, to = n_target_fcts*B, by=n_target_fcts)
         slct_M                      <- missings_target_mat[,i]
         ##
-        PS_FALSE_Int_Bias_sq_vec[i] <- sum(c(rowMeans(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
-        PS_TRUE_Int_Bias_sq_vec[i]  <- sum(c(rowMeans(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
-        PACE_Int_Bias_sq_vec[i]     <- sum(c(rowMeans(Y_PACE_MC_mat[    slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
-        Kraus_Int_Bias_sq_vec[i]    <- sum(c(rowMeans(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        par(mfrow=c(2,3))
+        plot(Y_PS_FALSE_MC_mat[,i], type="b", ylim=range(Y_PS_FALSE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PS_FALSE")
+        lines(Y_target_true_mat[,i]); points(y=Y_PS_FALSE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        ##
+        plot(Y_PS_TRUE_MC_mat[,i], type="b", ylim=range(Y_PS_TRUE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PS_TRUE")
+        lines(Y_target_true_mat[,i]); points(y=Y_PS_TRUE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        ##
+        plot(Y_CEScores_MC_mat[,i], type="b", ylim=range(Y_CEScores_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="CEScores")
+        lines(Y_target_true_mat[,i]); points(y=Y_CEScores_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        ##
+        plot(Y_PACE_MC_mat[,i], type="b", ylim=range(Y_PACE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PACE")
+        lines(Y_target_true_mat[,i]); points(y=Y_PACE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        ##
+        plot(Y_Kraus_MC_mat[,i], type="b", ylim=range(Y_Kraus_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="Kraus")
+        lines(Y_target_true_mat[,i]); points(y=Y_Kraus_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        par(mfrow=c(1,1))
+        ##
+        PS_FALSE_Int_BiasSq_vec[i] <- sum(c(rowMeans(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        PS_TRUE_Int_BiasSq_vec[i]  <- sum(c(rowMeans(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        CEScores_Int_BiasSq_vec[i] <- sum(c(rowMeans(Y_CEScores_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        PACE_Int_BiasSq_vec[i]     <- sum(c(rowMeans(Y_PACE_MC_mat[    slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
+        Kraus_Int_BiasSq_vec[i]    <- sum(c(rowMeans(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
         ##
         PS_FALSE_Int_Var_vec[i]     <- sum(apply(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
         PS_TRUE_Int_Var_vec[i]      <- sum(apply(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
+        CEScores_Int_Var_vec[i]     <- sum(apply(Y_CEScores_MC_mat[slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
         PACE_Int_Var_vec[i]         <- sum(apply(Y_PACE_MC_mat[    slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
         Kraus_Int_Var_vec[i]        <- sum(apply(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
       }

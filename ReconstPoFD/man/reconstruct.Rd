@@ -4,8 +4,8 @@
 \alias{reconstruct}
 \title{Reconstruct partially observed functions}
 \usage{
-reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
-  reconst_fcts = NULL, nRegGrid = 51, messages = FALSE)
+reconstruct(Ly, Lu, K = NULL, K_max = 4, method = c("PS_TRUE", "PS_FALSE",
+  "CEScores")[3], reconst_fcts = NULL, nRegGrid = 51, messages = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -16,7 +16,9 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, pre_smooth = FALSE,
 
 \item{K_max}{Maximum K (used in the AIC-type criterion)}
 
-\item{pre_smooth}{If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})}
+\item{method}{If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). 
+If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}).
+If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.}
 
 \item{reconst_fcts}{A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.}
 
@@ -35,26 +37,32 @@ SimDat   <- simuldataKraus(n = n, a = a, b = b)
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 ##
-reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
-pre_smooth = TRUE, nRegGrid = 75)
-Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
+reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE")
+Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
 nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-##
-reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
-pre_smooth = FALSE, nRegGrid = 75)
-Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
+U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
 nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 ##
-par(mfrow=c(3,1))
+reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE")
+Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+##
+reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores")
+Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), 
+nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+##
+par(mfrow=c(2,2))
 matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
 main="Orig. Data", xlim=c(a,b))
 matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
-type="l", main="pre_smooth=TRUE", ylab="", xlab="", xlim=c(a,b))
+type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
 matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
-type="l", main="pre_smooth=FALSE", ylab="", xlab="", xlim=c(a,b))
+type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
+matplot(x=U_reconst_mat_3[,1:5], y=Y_reconst_mat_3[,1:5], col=gray(.5), 
+type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
 par(mfrow=c(1,1))
 }

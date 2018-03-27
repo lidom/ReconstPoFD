@@ -5,7 +5,9 @@
 #' @param Lu           List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
 #' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
 #' @param K_max        Maximum K (used in the AIC-type criterion)
-#' @param pre_smooth   If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+#' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). 
+#'                     If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}).
+#'                     If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
 #' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
 #' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
 #' @param messages     Printing messages? (default: messages=FALSE)
@@ -17,33 +19,39 @@
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 #' ##
-#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, 
-#' pre_smooth = TRUE, nRegGrid = 75)
-#' Y_reconst_mat_1    <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
+#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE")
+#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_1    <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' ##
-#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, 
-#' pre_smooth = FALSE, nRegGrid = 75)
-#' Y_reconst_mat_2    <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_2    <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
+#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
 #' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
 #' ##
-#' par(mfrow=c(3,1))
+#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE")
+#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' ##
+#' reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores")
+#' Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), 
+#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' ##
+#' par(mfrow=c(2,2))
 #' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
 #' main="Orig. Data", xlim=c(a,b))
 #' matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
-#' type="l", main="pre_smooth=TRUE", ylab="", xlab="", xlim=c(a,b))
+#' type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
 #' matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
-#' type="l", main="pre_smooth=FALSE", ylab="", xlab="", xlim=c(a,b))
+#' type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
+#' matplot(x=U_reconst_mat_3[,1:5], y=Y_reconst_mat_3[,1:5], col=gray(.5), 
+#' type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
 #' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
                         Lu,
                         K            = NULL,
                         K_max        = 4,
-                        pre_smooth   = FALSE,
+                        method       = c("PS_TRUE", "PS_FALSE", "CEScores")[3],
                         reconst_fcts = NULL,
                         nRegGrid     = 51,
                         messages     = FALSE)
@@ -94,7 +102,7 @@ reconstruct <- function(Ly,
   Lu      <- split(U_mat,      rep(1:n, each = nRegGrid))
   ##
   ## K AIC
-  if(is.null(K)){
+  if(is.null(K) & method!="CEScores"){
     K_AIC <- K_aic_fun(Ly_cent     = Ly_cent,
                        Lu          = Lu,
                        cov_la_mat  = cov_est_mat,
@@ -102,8 +110,11 @@ reconstruct <- function(Ly,
                        K_max       = K_max,
                        messages    = messages)
     K <- K_AIC
-  }else{K_AIC <- NULL}
-  
+  }
+  if(is.null(K) & method=="CEScores"){
+    K <- length(fdapace_obj$lambda)
+  }
+  ## ##################################################################
   ## Re-Fitted Covariance:
   e_list        <- eigen(cov_est_mat, symmetric = TRUE)
   positiveInd   <- e_list[['values']] >= 0
@@ -115,19 +126,34 @@ reconstruct <- function(Ly,
   if(K==1){
     cov_est_mat <- evec_mat[,1,drop=FALSE]  %*%  t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
   }
+  ## ##################################################################
   ## Reconstructing all functions
   ## As list, since this facilitates a future generalization to 'random m'
   Y_reconst_list  <- vector("list", length(reconst_fcts))
   U_reconst_list  <- vector("list", length(reconst_fcts))
   ##
   for(i in 1:length(reconst_fcts)){
-    tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
-                        workGrid    = workGrid, 
-                        Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
-                        U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
-                        K           = K, 
-                        pre_smooth  = pre_smooth,
-                        messages    = messages)
+    if(method!="CEScores"){
+      tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
+                          workGrid    = workGrid, 
+                          Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
+                          U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
+                          K           = K, 
+                          pre_smooth  = ifelse(method=="PS_TRUE", TRUE, FALSE),
+                          messages    = messages)
+    }
+    ##
+    if(method=="CEScores"){
+      tmp  <- reconst_use_CEScores_fun(cov_la_mat  = cov_est_mat,     
+                                       workGrid    = workGrid, 
+                                       Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
+                                       U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
+                                       fdapace_obj = fdapace_obj,
+                                       # CEScores_i  = fdapace_obj$xiEst[i,],
+                                       # K           = K, 
+                                       pre_smooth  = FALSE,
+                                       messages    = messages)
+    }
     ##
     x_tmp      <- tmp[['x_reconst']]
     y_cent_tmp <- tmp[['y_reconst']]
@@ -145,29 +171,18 @@ reconstruct <- function(Ly,
     ))
 }
 
-
-#' Reconstruct a single partially observed centered function
-#'
-#' This function allows you to reconstruct the missing parts of a function given the observed parts.
-#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
-#' @param Y_cent_sm_i Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},
-#' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param K           Truncation parameter
-#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param messages    Print messages? (default=messages=FALSE)
+## ########################################################################
+## ########################################################################
 reconst_fun <- function(
   cov_la_mat,     
   workGrid,    
   Y_cent_sm_i,    
   U_sm_i,         
   K,              
-  pre_smooth = FALSE,
-  messages   = FALSE  
-  ## pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: L^\ast)
-  ## pre_smooth==FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: L)
+  pre_smooth      = FALSE,
+  messages        = FALSE  
 ){
-  
+  ##
   ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
   sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
   cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
@@ -184,6 +199,9 @@ reconst_fun <- function(
   eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
   evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
   ##
+  ## ##########################################
+  ## Check and set K
+  ## ##########################################
   if(length(eval_sm_compl)<K){
     if(messages){
       warning("Less non-negative eigenvalues than K. Therefore, K is set to the number of non-negative eigenvalues.")
@@ -209,12 +227,12 @@ reconst_fun <- function(
   }
   ## 'Small' PC-scores (OLS-approach)
   xi_sm_i         <- unname(c(stats::lm(c(stats::na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
-  ## ---------------------------------------------------------------
-  ## Produced Errors:
-  # ## Refitting (only of effect in the more noisy first run)
-  # Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
-  # xi_sm_i         <- unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients))
-  ## ----------------------------------------------------------------
+  ## Refitting (only of effect in the more noisy first run)
+  Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
+  xi_sm_i_refit   <- try(unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients)))
+  ## Use the refitted version only if no error was produced:
+  if(!is.error(xi_sm_i_refit)){xi_sm_i <- xi_sm_i_refit} 
+  ## #################################################
   ##
   ## Recovering: ###########################
   reconst_ls_vec    <- rep(0, length(workGrid))
@@ -239,18 +257,83 @@ reconst_fun <- function(
   ## ######################
 }
 
-#' AIC-based Selection of the Number of Eigenfunctions 
-#'
-#' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
-#' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
-#' 
-#' @param Ly_cent     List of centered Y-values. The ith list-element contains \eqn{Y_{i1}-\hat(\mu)(U_{i1}),\dots,Y_{im}-\hat(\mu)(U_{im})}{Y_{i1}-\hat(\mu)(U_{i1}),...,Y_{im}-\hat(\mu)(U_{im})}
-#' @param Lu          List of U-values. The ith list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
-#' @param K_max       Maximum K (truncation parameter)
-#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param messages    Print messages? (default=messages=FALSE)
+## ###########################################################
+## ###########################################################
+reconst_use_CEScores_fun <- function(
+  cov_la_mat,     
+  workGrid,    
+  Y_cent_sm_i,    
+  U_sm_i,       
+  fdapace_obj,
+  # CEScores_i,
+  # K,
+  pre_smooth,
+  messages  
+){
+  ##
+  K <- length(fdapace_obj$lambda)
+  ##
+  ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
+  sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
+  cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
+  grid_sm_compl_vec       <- workGrid[sm_compl_gridloc]
+  ##
+  if(pre_smooth==TRUE){
+    smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
+    Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
+  }
+  ##
+  ## Compute 'small' eigenvalues and eigenfunctions
+  e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
+  positiveInd        <- e_sm_compl[['values']] >= 0
+  eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
+  evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
+  ##
+  ## Standardize direction and L2norm of 'small' eigenfunctions
+  for(k in 1:K){
+    evec_sm_compl[,k] <- evec_sm_compl[,k]*sign(stats::cov(evec_sm_compl[,k], 1:length(evec_sm_compl[,k])))
+    scale             <- sqrt(pracma::trapz(x=grid_sm_compl_vec, y=evec_sm_compl[,k]^2))
+    evec_sm_compl[,k] <- evec_sm_compl[,k]/scale
+  }
+  ## #################################################
+  ## 'Extrapolated/Reconstructive' eigenfunctions
+  ela_reconst       <- matrix(NA, nrow=length(workGrid), ncol=K)
+  for(k in 1:K){
+    # ela_reconst[,k] <- c(evec_sm_compl[,k] %*% cov_la_mat[sm_compl_gridloc,,drop=FALSE])
+    ela_reconst[,k] <- apply(X      = cov_la_mat[sm_compl_gridloc,,drop=FALSE], 
+                             MARGIN = 2, 
+                             FUN    = function(x){pracma::trapz(x=grid_sm_compl_vec, evec_sm_compl[,k] * x)})
+  }
+  ## #################################################
+  xi_sm_i <- fdapace_obj$xiEst
+  ## #################################################
+  ##
+  ## Recovering: ###########################
+  reconst_ls_vec  <- rep(0, length(workGrid))
+  for(k in 1:K){
+    reconst_ls_vec    <- c(reconst_ls_vec + c((xi_sm_i[k]/fdapace_obj$lambda[k]) * ela_reconst[,k]))
+  }
+  y_reconst_vec <- reconst_ls_vec[!is.na(reconst_ls_vec)]
+  x_reconst_vec <- workGrid[!is.na(reconst_ls_vec)]
+  if(pre_smooth==TRUE){
+    ## Aliment with observed part 'Y_cent_sm_compl_fit_i':
+    sm.gr.loc                       <- c(1:length(workGrid))[sm_compl_gridloc]
+    ## lower marginal point
+    y_reconst_vec[1:min(sm.gr.loc)] <- y_reconst_vec[1:min(sm.gr.loc)] + Y_cent_sm_compl_fit_i[1] - y_reconst_vec[min(sm.gr.loc)]
+    ## upper marginal point
+    y_reconst_vec[max(sm.gr.loc):length(workGrid)] <- y_reconst_vec[max(sm.gr.loc):length(workGrid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
+    ## estimated ('observed') part
+    y_reconst_vec[sm.gr.loc]                       <- Y_cent_sm_compl_fit_i
+  }
+  ## ######################
+  return(list("y_reconst"  = c(y_reconst_vec),
+              "x_reconst"  = c(x_reconst_vec)))
+  ## ######################
+}
+
+
+## ###########################################################
+## ###########################################################
 K_aic_fun <- function(Ly_cent, 
                       Lu,
                       cov_la_mat,
@@ -608,5 +691,17 @@ iter_reconst_fun <- function(cov_la_mat,
               "x_reconst"=U_la_i))
 }
 
+## ##########################
+## Error catching function
+## ##########################
+## My error checker function
+is.error <- function(x){
+  bool.result <- inherits(x, "try-error")
+  bool.result <- unname(bool.result)
+  return(bool.result)
+}
+## check:
+#result   <- try(log("a"), silent=TRUE) # produces and error
+#is.error(result)
 
 

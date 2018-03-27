@@ -68,8 +68,8 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
       xi2 <- sqrt(10-(10/(n_basis + 1))*(k_vec))     * stats::rnorm(n=n_basis)
     }
     if(DGP=="DGP2"){
-      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1)))-sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
-      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))  -sqrt(10-(10/(n_basis + 1))*(k_vec))) 
+      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
+      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
     }
     ##
     Y_true_mat[,i] <- c(c(rowMeans(

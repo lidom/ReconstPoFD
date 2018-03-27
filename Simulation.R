@@ -160,7 +160,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         }
         ##
         ## ##################################################################
-        if(repet %% 10) cat("repet/B=",repet,"/",B,"\n")
+        if(repet %% 1 == 0) cat("repet/B=",repet,"/",B,"\n")
         ## ##################################################################
       } ## End of B-loop
       ##
@@ -178,7 +178,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       Kraus_Int_Var_vec        <- rep(NA, n_target_fcts)
       ##
       for(i in 1:n_target_fcts){
-        ## i <- 2
+        ## i <- 1
         slct_MC_fcts                <- seq(from = i, to = n_target_fcts*B, by=n_target_fcts)
         slct_M                      <- missings_target_mat[,i]
         ##

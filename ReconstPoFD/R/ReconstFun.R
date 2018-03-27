@@ -144,8 +144,8 @@ reconstruct <- function(Ly,
     }
     ##
     if(method=="CEScores"){
-      tmp  <- reconst_use_CEScores_fun(cov_la_mat  = cov_est_mat,     
-                                       workGrid    = workGrid, 
+      tmp  <- reconst_use_CEScores_fun(#cov_la_mat  = cov_est_mat,     
+                                       #workGrid    = workGrid, 
                                        Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
                                        U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
                                        fdapace_obj = fdapace_obj,
@@ -260,8 +260,8 @@ reconst_fun <- function(
 ## ###########################################################
 ## ###########################################################
 reconst_use_CEScores_fun <- function(
-  cov_la_mat,     
-  workGrid,    
+  # cov_la_mat,     
+  # workGrid,    
   Y_cent_sm_i,    
   U_sm_i,       
   fdapace_obj,
@@ -271,7 +271,9 @@ reconst_use_CEScores_fun <- function(
   messages  
 ){
   ##
-  K <- length(fdapace_obj$lambda)
+  K          <- length(fdapace_obj$lambda)
+  workGrid   <- fdapace_obj$workGrid
+  cov_la_mat <- fdapace_obj$fittedCov
   ##
   ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
   sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
@@ -284,10 +286,11 @@ reconst_use_CEScores_fun <- function(
   }
   ##
   ## Compute 'small' eigenvalues and eigenfunctions
-  e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
-  positiveInd        <- e_sm_compl[['values']] >= 0
-  eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
-  evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
+  # e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
+  # positiveInd        <- e_sm_compl[['values']] >= 0
+  # eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
+  # evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
+  evec_sm_compl <- fdapace_obj$phi
   ##
   ## Standardize direction and L2norm of 'small' eigenfunctions
   for(k in 1:K){

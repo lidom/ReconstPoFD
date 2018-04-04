@@ -271,24 +271,17 @@ reconst_use_CEScores_fun <- function(
   ## Covariance
   cov_la_mat      <- fdapace_obj$smoothedCov
   ## Mean
-  mu_est_vec      <- fdapace_obj$mu
+  ## mu_est_vec      <- fdapace_obj$mu
   ##
   U_sm_min_i              <- min(U_mat[,reconst_fct], na.rm = TRUE)
   U_sm_max_i              <- max(U_mat[,reconst_fct], na.rm = TRUE)
   sm_compl_gridloc        <- workGrid>=U_sm_min_i & workGrid<=U_sm_max_i
-  #cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
   grid_sm_compl_vec       <- workGrid[sm_compl_gridloc]
   ##
   if(pre_smooth==TRUE){
     smooth.fit              <- stats::smooth.spline(y=Y_cent_mat[,reconst_fct], x=U_mat[,reconst_fct])
     Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
   }
-  ##
-  ## Compute 'small' eigenvalues and eigenfunctions
-  # e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
-  # positiveInd        <- e_sm_compl[['values']] >= 0
-  # eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
-  # evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
   ##
   ## PACE on small:
   Ly_sm_i <- vector("list", ncol(Y_cent_mat))
@@ -298,8 +291,6 @@ reconst_use_CEScores_fun <- function(
     Lu_sm_i[[i]] <- c(stats::na.omit(     U_mat[,i][U_mat[,i]>=U_sm_min_i & U_mat[,i]<=U_sm_max_i]))
   }
   ## 
-  #grid_sm_compl_vec <- seq(from=range(c(unlist(Lu_sm_i)))[1], to=range(c(unlist(Lu_sm_i)))[2], length.out = length(grid_sm_compl_vec))
-  
   fdapace_sm_obj <- fdapace::FPCA(Ly    = Ly_sm_i, 
                                   Lt    = Lu_sm_i, 
                                   optns = list(
@@ -308,11 +299,10 @@ reconst_use_CEScores_fun <- function(
                                     "methodMuCovEst" = "smooth",
                                     #"userCov"=list("t"=grid_sm_compl_vec, "cov"=cov_sm_compl_mat),
                                     #"userMu" =list("t"=grid_sm_compl_vec, "mu" =rep(0,length(grid_sm_compl_vec))),
-                                    #"outPercent"=c(0,1)
-                                    "methodSelectK" = K#length(fdapace_obj$lambda)
+                                    "methodSelectK" = K
                                   ))
   ##
-  K              <- length(fdapace_sm_obj$lambda)#min(length(fdapace_sm_obj$lambda), ncol(evec_sm_compl))
+  K              <- length(fdapace_sm_obj$lambda)
   CEScores_vec_i <- c(fdapace_sm_obj$xiEst[reconst_fct, seq_len(K), drop=FALSE])
   efcts_sm_pace  <- matrix(0, nrow=length(grid_sm_compl_vec), ncol=K)
   ##

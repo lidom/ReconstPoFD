@@ -10,7 +10,7 @@ library("ReconstPoFD")  # contains the function 'reconstuct()'
 ## Set seed
 set.seed(873)
 ## Number of MC-Repetitions
-B         <-  10
+B         <-  30
 ## #######################################
 
 ## #######################################

@@ -57,7 +57,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldataWBF(n=n_target_fcts, a=a, b=b, DGP='DGP5', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
-      ##
+      ## 
       target_fcts       <- 1:n_target_fcts
       ##
       Y_target_true_mat <- SimDat[['Y_true_mat']]

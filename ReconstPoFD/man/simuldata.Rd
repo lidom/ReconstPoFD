@@ -5,7 +5,7 @@
 \title{Simulate Data}
 \usage{
 simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
-  DGP = c("DGP1", "DGP2")[1], nRegGrid = 75, determ_obs_interv = NULL)
+  DGP = c("DGP1", "DGP2")[1], nRegGrid = 51, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}

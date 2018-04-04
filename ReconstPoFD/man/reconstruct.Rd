@@ -37,32 +37,29 @@ SimDat   <- simuldataKraus(n = n, a = a, b = b)
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 ##
-reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE")
-Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE",
+reconst_fcts = 1:3)
+Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
+U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
 ##
-reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE")
-Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE", 
+reconst_fcts = 1:3)
+Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
+U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3) 
 ##
-reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores")
-Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), 
-nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores",
+reconst_fcts = 1:3)
+Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), ncol=3) 
+U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), ncol=3) 
 ##
 par(mfrow=c(2,2))
-matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
+matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l", 
 main="Orig. Data", xlim=c(a,b))
-matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
+matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5), 
 type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
-matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
+matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5), 
 type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
-matplot(x=U_reconst_mat_3[,1:5], y=Y_reconst_mat_3[,1:5], col=gray(.5), 
+matplot(x=U_reconst_mat_3, y=Y_reconst_mat_3, col=gray(.5), 
 type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
 par(mfrow=c(1,1))
 }

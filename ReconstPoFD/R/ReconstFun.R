@@ -19,32 +19,29 @@
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 #' ##
-#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE")
-#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE",
+#' reconst_fcts = 1:3)
+#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
 #' ##
-#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE")
-#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE", 
+#' reconst_fcts = 1:3)
+#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3) 
 #' ##
-#' reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores")
-#' Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
-#' U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), 
-#' nrow=nrow(Y_mat), ncol=ncol(Y_mat)) 
+#' reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores",
+#' reconst_fcts = 1:3)
+#' Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), ncol=3) 
 #' ##
 #' par(mfrow=c(2,2))
-#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], ylab="", col=gray(.5), type="l", 
+#' matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l", 
 #' main="Orig. Data", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_1[,1:5], y=Y_reconst_mat_1[,1:5], col=gray(.5), 
+#' matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5), 
 #' type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_2[,1:5], y=Y_reconst_mat_2[,1:5], col=gray(.5), 
+#' matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5), 
 #' type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_3[,1:5], y=Y_reconst_mat_3[,1:5], col=gray(.5), 
+#' matplot(x=U_reconst_mat_3, y=Y_reconst_mat_3, col=gray(.5), 
 #' type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
 #' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
@@ -98,13 +95,13 @@ reconstruct <- function(Ly,
     U_mat[!na_loc,i]  <- workGrid[!na_loc]       
   }
   ## From matrix to list:
-  Ly_cent <- split(Y_cent_mat, rep(1:n, each = nRegGrid))
-  Lu      <- split(U_mat,      rep(1:n, each = nRegGrid))
+  Ly_align_cent <- split(Y_cent_mat, rep(1:n, each = nRegGrid))
+  Lu_align      <- split(U_mat,      rep(1:n, each = nRegGrid))
   ##
   ## K AIC
   if(is.null(K) & method!="CEScores"){
-    K_AIC <- K_aic_fun(Ly_cent     = Ly_cent,
-                       Lu          = Lu,
+    K_AIC <- K_aic_fun(Ly_cent     = Ly_align_cent,
+                       Lu          = Lu_align,
                        cov_la_mat  = cov_est_mat,
                        workGrid    = workGrid,
                        K_max       = K_max,
@@ -116,15 +113,17 @@ reconstruct <- function(Ly,
   }
   ## ##################################################################
   ## Re-Fitted Covariance:
-  e_list        <- eigen(cov_est_mat, symmetric = TRUE)
-  positiveInd   <- e_list[['values']] >= 0
-  eval_vec      <- e_list[['values']][positiveInd]
-  evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
-  if(K>1){
-    cov_est_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
+  if(method!="CEScores"){
+    e_list        <- eigen(cov_est_mat, symmetric = TRUE)
+    positiveInd   <- e_list[['values']] >= 0
+    eval_vec      <- e_list[['values']][positiveInd]
+    evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
+    if(K>1){
+      cov_est_refit_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
     }
-  if(K==1){
-    cov_est_mat <- evec_mat[,1,drop=FALSE]  %*%  t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
+    if(K==1){
+      cov_est_refit_mat <- evec_mat[, 1,drop=FALSE]  %*% t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
+    }
   }
   ## ##################################################################
   ## Reconstructing all functions
@@ -134,7 +133,7 @@ reconstruct <- function(Ly,
   ##
   for(i in 1:length(reconst_fcts)){ # i <- 1
     if(method!="CEScores"){
-      tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
+      tmp  <- reconst_fun(cov_la_mat  = cov_est_refit_mat, 
                           workGrid    = workGrid, 
                           Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
                           U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
@@ -232,7 +231,7 @@ reconst_fun <- function(
   ## #################################################
   ##
   ## Recovering: ###########################
-  reconst_ls_vec    <- rep(0, length(workGrid))
+  reconst_ls_vec      <- rep(0, length(workGrid))
   for(k in 1:K){
     reconst_ls_vec    <- c(reconst_ls_vec + c((xi_sm_i[k]/eval_sm_compl[k]) * ela_reconst[,k]))
   }

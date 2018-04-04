@@ -26,7 +26,7 @@
 #' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 75, determ_obs_interv = NULL){
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
@@ -102,9 +102,8 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 
 #' Simulate Data (Adapted from Kraus (2015))
 #'
-#' This function allows to simulate functional data as used in the simulation study of: 
-#' 
-#' However, the missingness process is adjusted to avoid missing 'holes'.
+#' This function allows to simulate functional data as used in the simulation study of Kraus, D. (2015), 
+#' however, the missingness process is adjusted to avoid missing 'holes'.
 #' @param n          Number of functions
 #' @param a          Lower interval boundary
 #' @param b          Upper interval boundary
@@ -138,7 +137,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' main="NoMissings & NoNoise", xlim=c(a,b))
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
-simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 75, determ_obs_interv = NULL)
+simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
   ## Number of grid points in [a,b]
@@ -212,6 +211,117 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
     # M_up <- min(1,C+E)
     # X_tmp[M_lo <= t_vec & t_vec <= M_up] <- NA
     ##-------------------------
+    Y_mat[,i]        <- Y_vec
+    U_mat[,i]        <- U_vec
+    Y_true_mat[,i]   <- Y_true_vec
+    U_true_mat[,i]   <- U_true_vec
+    ##
+    Y_list[[i]]      <- c(stats::na.omit(Y_vec))
+    U_list[[i]]      <- c(stats::na.omit(U_vec))
+    Y_true_list[[i]] <- Y_true_vec
+    U_true_list[[i]] <- U_true_vec
+  }
+  return(list("Y_mat"  = Y_mat, 
+              "U_mat"  = U_mat,
+              "Y_list" = Y_list, 
+              "U_list" = U_list,
+              ##
+              "Y_true_mat"  = Y_true_mat, 
+              "U_true_mat"  = U_true_mat,
+              "Y_true_list" = Y_true_list, 
+              "U_true_list" = U_true_list,
+              ##
+              "A_vec"       = A_vec,
+              "B_vec"       = B_vec
+  ))
+}
+
+#' Simulate Data without Basis Functions
+#'
+#' This function allows to simulate functional data without using the typical global basis functions.
+#' @param n          Number of functions
+#' @param a          Lower interval boundary
+#' @param b          Upper interval boundary
+#' @param DGP        Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.
+#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
+#' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
+#' @export simuldataWBF
+#' @references 
+#' Kraus, D. (2015). Components and completion of partially observed functional data. 
+#' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
+#' @examples  
+#' a <- 0; b <- 1; n <- 100; DGP <- c('DGP5')
+#' ##
+#' mean_fun <- function(u){return( 3*((u-a)/(b-a))^2 + 3*cos(3*pi*((u-a)/(b-a)) ))}
+#' ##
+#' SimDat   <- simuldataWBF(n = n, a = a, b = b, DGP = DGP)
+#' ## 
+#' Y_mat       <- SimDat[['Y_mat']]
+#' U_mat       <- SimDat[['U_mat']]
+#' Y_true_mat  <- SimDat[['Y_true_mat']]
+#' U_true_mat  <- SimDat[['U_true_mat']]
+#' ##
+#' par(mfrow=c(2,1))
+#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+#' main="Missings & Noise", xlim=c(a,b))
+#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
+#' main="NoMissings & NoNoise", xlim=c(a,b))
+#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+#' par(mfrow=c(1,1))
+simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
+{
+  ##
+  ## Number of grid points in [a,b]
+  p <- nRegGrid
+  ##
+  Y_mat       <- matrix(NA, p, n)
+  U_mat       <- matrix(NA, p, n)
+  Y_true_mat  <- matrix(NA, p, n)
+  U_true_mat  <- matrix(NA, p, n)
+  ##
+  Y_list      <- vector("list", n)
+  U_list      <- vector("list", n)
+  Y_true_list <- vector("list", n)
+  U_true_list <- vector("list", n)
+  ##
+  A_vec         <- rep(NA, n)
+  B_vec         <- rep(NA, n)
+  ##
+  for(i in 1:n){
+    if(DGP=='DGP5'){
+      mean_fun <- function(u){return( 3*((u-a)/(b-a))^2 + 3*cos(3*pi*((u-a)/(b-a)) ))}
+      ##
+      rand_vec <- stats::rnorm(n = 6, sd=3)
+    }
+    ##
+    loc_vec <- seq(a, b, len=6)
+    U_vec   <- seq(a, b, len=p)
+    ##
+    Y_vec <- stats::spline(x = loc_vec, y = rand_vec, method = "natural", xout = U_vec)$y + mean_fun(U_vec)
+    ##
+    if(is.null(determ_obs_interv)){
+      ## Random observed interval
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      }else{
+        A_vec[i] = a
+        B_vec[i] = b
+      }
+    }else{
+      A_vec[i] = determ_obs_interv[1]
+      B_vec[i] = determ_obs_interv[2]
+    }
+    ##
+    Y_true_vec              <- Y_vec
+    Y_vec[U_vec < A_vec[i]] <- NA
+    Y_vec[U_vec > B_vec[i]] <- NA
+    ##
+    U_true_vec                   <- U_vec
+    U_vec[U_true_vec < A_vec[i]] <- NA
+    U_vec[U_true_vec > B_vec[i]] <- NA
+    ##
     Y_mat[,i]        <- Y_vec
     U_mat[,i]        <- U_vec
     Y_true_mat[,i]   <- Y_true_vec

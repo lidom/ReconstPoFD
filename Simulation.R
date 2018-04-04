@@ -44,7 +44,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP3'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
+      ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -56,6 +56,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldataKraus(n = n_target_fcts, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldataWBF(n=n_target_fcts, a=a, b=b, DGP='DGP5', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       ##
       target_fcts       <- 1:n_target_fcts
       ##
@@ -91,10 +92,11 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       ## sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
       for(repet in 1:B){
         ##
-        if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP1', nRegGrid = nRegGrid)}
-        if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid)}
+        if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(     n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP1', nRegGrid = nRegGrid)}
+        if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(     n = n-n_target_fcts, m = m, a = a, b = b, n_basis = 10, DGP='DGP2', nRegGrid = nRegGrid)}
         if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldataKraus(n = n-n_target_fcts, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid)}
         if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldataKraus(n = n-n_target_fcts, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid)}
+        if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldataWBF(  n = n-n_target_fcts, a = a, b = b, DGP='DGP5', nRegGrid = nRegGrid)}
         ##
         Y_mat      <- cbind(Y_target_mat, SimDat[['Y_mat']])
         U_mat      <- cbind(U_target_mat, SimDat[['U_mat']])
@@ -151,7 +153,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         Y_PACE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PACE_mat
         K_PACE_MC_vec[repet]  <- length(result_PACE$lambda)
         ##
-        if(any(DGP==c('DGP3','DGP4'))){
+        if(any(DGP==c('DGP3','DGP4','DGP5'))){
           ## Reconstruction Operator of Kraus (2015, JRSSB)
           result_Kraus            <- ReconstPoFD::reconstructKraus(X_mat = Y_mat, reconst_fcts = target_fcts)
           Y_Kraus_mat             <- result_Kraus[['X_reconst_mat']]

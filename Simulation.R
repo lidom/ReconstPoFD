@@ -44,7 +44,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP4'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
+      ## a <- 0; b <- 1; DGP <- 'DGP3'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")

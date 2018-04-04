@@ -31,7 +31,7 @@ This function allows you to reconstruct the missing parts of a function given th
 }
 \examples{
  
-a <- 0; b <- 1; n <- 100
+a <- 0; b <- 1; n <- 50
 SimDat   <- simuldataKraus(n = n, a = a, b = b)
 ## 
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]

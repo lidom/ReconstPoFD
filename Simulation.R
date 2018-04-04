@@ -3,7 +3,7 @@ library("devtools")
 # install_github("lidom/ReconstPoFD/ReconstPoFD")
 # install.packages("doParallel", "fdapace")
 library("ReconstPoFD")  # contains the function 'reconstuct()'
-library("doParallel")   # parallel-looping
+#library("doParallel")   # parallel-looping
 
 
 ## #######################################

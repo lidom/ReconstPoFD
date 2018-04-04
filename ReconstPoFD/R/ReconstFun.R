@@ -13,7 +13,7 @@
 #' @param messages     Printing messages? (default: messages=FALSE)
 #' @export reconstruct
 #' @examples  
-#' a <- 0; b <- 1; n <- 100
+#' a <- 0; b <- 1; n <- 50
 #' SimDat   <- simuldataKraus(n = n, a = a, b = b)
 #' ## 
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
@@ -132,7 +132,7 @@ reconstruct <- function(Ly,
   Y_reconst_list  <- vector("list", length(reconst_fcts))
   U_reconst_list  <- vector("list", length(reconst_fcts))
   ##
-  for(i in 1:length(reconst_fcts)){
+  for(i in 1:length(reconst_fcts)){ # i <- 1
     if(method!="CEScores"){
       tmp  <- reconst_fun(cov_la_mat  = cov_est_mat, 
                           workGrid    = workGrid, 
@@ -144,13 +144,10 @@ reconstruct <- function(Ly,
     }
     ##
     if(method=="CEScores"){
-      tmp  <- reconst_use_CEScores_fun(#cov_la_mat  = cov_est_mat,     
-                                       #workGrid    = workGrid, 
-                                       Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
-                                       U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
+      tmp  <- reconst_use_CEScores_fun(Y_cent_mat  = Y_cent_mat,
+                                       U_mat       = U_mat,
+                                       reconst_fct = reconst_fcts[i],
                                        fdapace_obj = fdapace_obj,
-                                       # CEScores_i  = fdapace_obj$xiEst[i,],
-                                       # K           = K, 
                                        pre_smooth  = FALSE,
                                        messages    = messages)
     }
@@ -260,79 +257,180 @@ reconst_fun <- function(
 ## ###########################################################
 ## ###########################################################
 reconst_use_CEScores_fun <- function(
-  # cov_la_mat,     
-  # workGrid,    
-  Y_cent_sm_i,    
-  U_sm_i,       
+  Y_cent_mat,
+  U_mat, 
+  reconst_fct,
   fdapace_obj,
-  # CEScores_i,
-  # K,
-  pre_smooth,
-  messages  
+  pre_smooth = FALSE,
+  messages = FALSE  
 ){
   ##
-  K          <- length(fdapace_obj$lambda)
-  workGrid   <- fdapace_obj$workGrid
-  cov_la_mat <- fdapace_obj$fittedCov
+  ## Regular grid
+  workGrid        <- fdapace_obj$workGrid
+  ## Covariance
+  cov_la_mat      <- fdapace_obj$smoothedCov
+  ## Mean
+  mu_est_vec      <- fdapace_obj$mu
   ##
-  ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
-  sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
+  U_sm_min_i              <- min(U_mat[,reconst_fct], na.rm = TRUE)
+  U_sm_max_i              <- max(U_mat[,reconst_fct], na.rm = TRUE)
+  sm_compl_gridloc        <- workGrid>=U_sm_min_i & workGrid<=U_sm_max_i
   cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
   grid_sm_compl_vec       <- workGrid[sm_compl_gridloc]
   ##
-  if(pre_smooth==TRUE){
-    smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
-    Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
-  }
+  # if(pre_smooth==TRUE){
+  #   smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
+  #   Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
+  # }
   ##
   ## Compute 'small' eigenvalues and eigenfunctions
-  # e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
-  # positiveInd        <- e_sm_compl[['values']] >= 0
-  # eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
-  # evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
-  evec_sm_compl <- fdapace_obj$phi
+  e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
+  positiveInd        <- e_sm_compl[['values']] >= 0
+  eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
+  evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
   ##
-  ## Standardize direction and L2norm of 'small' eigenfunctions
-  for(k in 1:K){
-    evec_sm_compl[,k] <- evec_sm_compl[,k]*sign(stats::cov(evec_sm_compl[,k], 1:length(evec_sm_compl[,k])))
-    scale             <- sqrt(pracma::trapz(x=grid_sm_compl_vec, y=evec_sm_compl[,k]^2))
-    evec_sm_compl[,k] <- evec_sm_compl[,k]/scale
+  ## PACE on small:
+  Ly_sm_i <- vector("list", ncol(Y_cent_mat))
+  Lu_sm_i <- vector("list", ncol(Y_cent_mat))
+  for(i in seq_len(ncol(Y_cent_mat))){
+    Ly_sm_i[[i]] <- c(stats::na.omit(Y_cent_mat[,i][U_mat[,i]>=U_sm_min_i & U_mat[,i]<=U_sm_max_i]))
+    Lu_sm_i[[i]] <- c(stats::na.omit(     U_mat[,i][U_mat[,i]>=U_sm_min_i & U_mat[,i]<=U_sm_max_i]))
   }
+  ## 
+  fdapace_sm_obj <- fdapace::FPCA(Ly    = Ly_sm_i, 
+                                  Lt    = Lu_sm_i, 
+                                  optns = list(
+                                    "userCov"=list("t"=grid_sm_compl_vec, "cov"=cov_sm_compl_mat),
+                                    "userMu" =list("t"=grid_sm_compl_vec, "mu" =rep(0,length(grid_sm_compl_vec)))
+                                  ))
+  ##
+  K              <- min(length(fdapace_sm_obj$lambda), ncol(evec_sm_compl))
+  CEScores_vec_i <- c(fdapace_sm_obj$xiEst[reconst_fct, seq_len(K), drop=FALSE])
+  efcts_sm_pace  <- matrix(0, nrow=length(grid_sm_compl_vec), ncol=K)
+  ##
+  for(k in seq_len(K)){
+    efcts_sm_pace[,k]  <- stats::spline(x = fdapace_sm_obj$workGrid, y=fdapace_sm_obj$phi[, k, drop=FALSE], xout = grid_sm_compl_vec)$y
+  }
+  ## matplot(cbind(evec_sm_compl[,1], efcts_sm_pace[,1]))
+  ##
   ## #################################################
   ## 'Extrapolated/Reconstructive' eigenfunctions
-  ela_reconst       <- matrix(NA, nrow=length(workGrid), ncol=K)
-  for(k in 1:K){
-    # ela_reconst[,k] <- c(evec_sm_compl[,k] %*% cov_la_mat[sm_compl_gridloc,,drop=FALSE])
-    ela_reconst[,k] <- apply(X      = cov_la_mat[sm_compl_gridloc,,drop=FALSE], 
-                             MARGIN = 2, 
-                             FUN    = function(x){pracma::trapz(x=grid_sm_compl_vec, evec_sm_compl[,k] * x)})
+  ela_reconst    <- matrix(NA, nrow=length(workGrid), ncol=K)
+  for(k in seq_len(K)){
+    ela_reconst[,k] <- c(evec_sm_compl[,k] %*% cov_la_mat[sm_compl_gridloc,,drop=FALSE])
+    ## re-scale: 
+    sign_tmp        <- sign(ela_reconst[sm_compl_gridloc,k] %*% efcts_sm_pace[,k])
+    scale_tmp       <- sqrt(sum(efcts_sm_pace[,k]^2)) / sqrt(sum(ela_reconst[sm_compl_gridloc,k]^2))
+    ela_reconst[,k] <- ela_reconst[,k] * scale_tmp
   }
-  ## #################################################
-  xi_sm_i <- fdapace_obj$xiEst
-  ## #################################################
+  ## k <- 2; matplot(cbind(ela_reconst[sm_compl_gridloc,k], efcts_sm_pace[,k]))
   ##
-  ## Recovering: ###########################
-  reconst_ls_vec  <- rep(0, length(workGrid))
-  for(k in 1:K){
-    reconst_ls_vec    <- c(reconst_ls_vec + c((xi_sm_i[k]/fdapace_obj$lambda[k]) * ela_reconst[,k]))
-  }
-  y_reconst_vec <- reconst_ls_vec[!is.na(reconst_ls_vec)]
-  x_reconst_vec <- workGrid[!is.na(reconst_ls_vec)]
-  if(pre_smooth==TRUE){
-    ## Aliment with observed part 'Y_cent_sm_compl_fit_i':
-    sm.gr.loc                       <- c(1:length(workGrid))[sm_compl_gridloc]
-    ## lower marginal point
-    y_reconst_vec[1:min(sm.gr.loc)] <- y_reconst_vec[1:min(sm.gr.loc)] + Y_cent_sm_compl_fit_i[1] - y_reconst_vec[min(sm.gr.loc)]
-    ## upper marginal point
-    y_reconst_vec[max(sm.gr.loc):length(workGrid)] <- y_reconst_vec[max(sm.gr.loc):length(workGrid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
-    ## estimated ('observed') part
-    y_reconst_vec[sm.gr.loc]                       <- Y_cent_sm_compl_fit_i
+  Y_cent_fit_i <- numeric(length = length(workGrid))
+  for(k in seq_len(K)){
+    Y_cent_fit_i <- Y_cent_fit_i + CEScores_vec_i[k] * ela_reconst[,k]
   }
   ## ######################
-  return(list("y_reconst"  = c(y_reconst_vec),
-              "x_reconst"  = c(x_reconst_vec)))
+  return(list("y_reconst"  = c(Y_cent_fit_i),
+              "x_reconst"  = c(workGrid)))
   ## ######################
 }
+
+#   slct_vec        <- match(U_sm_i, workGrid)
+#   ##
+#   eigen_la_obj    <- eigen(cov_la_mat, symmetric = TRUE)
+#   evals_la_vec    <- eigen_la_obj[['values']]
+#   evec_la_mat     <- eigen_la_obj[['vectors']]
+#   non_neg_la_ev   <- evals_la_vec>0
+#   evals_la_vec    <- evals_la_vec[non_neg_sm_ev]
+#   evec_la_mat     <- evec_la_mat[,non_neg_sm_ev]
+#   K_la_MAX        <- length(evals_la_vec)
+#   ##
+#   cov_sm_mat      <- cov_la_mat[slct_vec, slct_vec]
+#   eigen_sm_obj    <- eigen(cov_sm_mat, symmetric = TRUE)
+#   evals_sm_vec    <- eigen_sm_obj[['values']]
+#   evec_sm_mat     <- eigen_sm_obj[['vectors']]
+#   non_neg_sm_ev   <- evals_sm_vec>0
+#   evals_sm_vec    <- evals_sm_vec[non_neg_sm_ev]
+#   evec_sm_mat     <- evec_sm_mat[,non_neg_sm_ev]
+#   K_sm_MAX        <- length(evals_sm_vec)
+#   ##
+#   K               <- min(K_la_MAX, K_sm_MAX, K_AIC)
+#   SIGMA_mat       <- cov_sm_mat + diag(sigma2, nrow = nrow(cov_sm_mat))
+#   SIGMA_INV_mat   <- solve(SIGMA_mat)
+#   ##
+# 
+#   ##
+#   Y_fit_i <- mu_est_vec + Y_cent_fit_i
+#   cbind(Y_fit_i, fitted(fdapace_obj)[1,])
+#   matplot(y=cbind(Y_fit_i, fitted(fdapace_obj)[1,]), x=workGrid)
+#   lines(y=SimDat$Y_true_list[[1]], x=SimDat$U_true_list[[1]])
+#   
+#   
+#   
+#   
+#   
+#   K          <- length(fdapace_obj$lambda)
+#   workGrid   <- fdapace_obj$workGrid
+#   cov_la_mat <- fdapace_obj$fittedCov
+#   ##
+#   ## Extracting the [A_i,B_i]^2 part from the large cov-matrix:
+#   sm_compl_gridloc        <- workGrid>=min(U_sm_i, na.rm = TRUE) & workGrid<=max(U_sm_i, na.rm = TRUE)
+#   cov_sm_compl_mat        <- cov_la_mat[sm_compl_gridloc, sm_compl_gridloc]
+#   grid_sm_compl_vec       <- workGrid[sm_compl_gridloc]
+#   ##
+#   if(pre_smooth==TRUE){
+#     smooth.fit              <- stats::smooth.spline(y=Y_cent_sm_i, x=U_sm_i)
+#     Y_cent_sm_compl_fit_i   <- stats::predict(smooth.fit,grid_sm_compl_vec)$y
+#   }
+#   ##
+#   ## Compute 'small' eigenvalues and eigenfunctions
+#   # e_sm_compl         <- eigen(cov_sm_compl_mat, symmetric = TRUE)
+#   # positiveInd        <- e_sm_compl[['values']] >= 0
+#   # eval_sm_compl      <- e_sm_compl[['values']][positiveInd]
+#   # evec_sm_compl      <- e_sm_compl[['vectors']][,positiveInd, drop=FALSE]
+#   evec_sm_compl <- fdapace_obj$phi
+#   ##
+#   ## Standardize direction and L2norm of 'small' eigenfunctions
+#   for(k in 1:K){
+#     evec_sm_compl[,k] <- evec_sm_compl[,k]*sign(stats::cov(evec_sm_compl[,k], 1:length(evec_sm_compl[,k])))
+#     scale             <- sqrt(pracma::trapz(x=grid_sm_compl_vec, y=evec_sm_compl[,k]^2))
+#     evec_sm_compl[,k] <- evec_sm_compl[,k]/scale
+#   }
+#   ## #################################################
+#   ## 'Extrapolated/Reconstructive' eigenfunctions
+#   ela_reconst       <- matrix(NA, nrow=length(workGrid), ncol=K)
+#   for(k in 1:K){
+#     # ela_reconst[,k] <- c(evec_sm_compl[,k] %*% cov_la_mat[sm_compl_gridloc,,drop=FALSE])
+#     ela_reconst[,k] <- apply(X      = cov_la_mat[sm_compl_gridloc,,drop=FALSE], 
+#                              MARGIN = 2, 
+#                              FUN    = function(x){pracma::trapz(x=grid_sm_compl_vec, evec_sm_compl[,k] * x)})
+#   }
+#   ## #################################################
+#   xi_sm_i <- fdapace_obj$xiEst
+#   ## #################################################
+#   ##
+#   ## Recovering: ###########################
+#   reconst_ls_vec  <- rep(0, length(workGrid))
+#   for(k in 1:K){
+#     reconst_ls_vec    <- c(reconst_ls_vec + c((xi_sm_i[k]/fdapace_obj$lambda[k]) * ela_reconst[,k]))
+#   }
+#   y_reconst_vec <- reconst_ls_vec[!is.na(reconst_ls_vec)]
+#   x_reconst_vec <- workGrid[!is.na(reconst_ls_vec)]
+#   if(pre_smooth==TRUE){
+#     ## Aliment with observed part 'Y_cent_sm_compl_fit_i':
+#     sm.gr.loc                       <- c(1:length(workGrid))[sm_compl_gridloc]
+#     ## lower marginal point
+#     y_reconst_vec[1:min(sm.gr.loc)] <- y_reconst_vec[1:min(sm.gr.loc)] + Y_cent_sm_compl_fit_i[1] - y_reconst_vec[min(sm.gr.loc)]
+#     ## upper marginal point
+#     y_reconst_vec[max(sm.gr.loc):length(workGrid)] <- y_reconst_vec[max(sm.gr.loc):length(workGrid)] + Y_cent_sm_compl_fit_i[length(Y_cent_sm_compl_fit_i)] - y_reconst_vec[max(sm.gr.loc)]
+#     ## estimated ('observed') part
+#     y_reconst_vec[sm.gr.loc]                       <- Y_cent_sm_compl_fit_i
+#   }
+#   ## ######################
+#   return(list("y_reconst"  = c(y_reconst_vec),
+#               "x_reconst"  = c(x_reconst_vec)))
+#   ## ######################
+# }
 
 
 ## ###########################################################

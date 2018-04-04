@@ -21,7 +21,7 @@ b         <-   1
 ## Regular grid points
 nRegGrid  <-  51 
 ##
-n_target_fcts <- 5
+n_target_fcts <- 2
 ##
 determ_obs_interv <- c((a+(b-a)*0.33), (b-(b-a)*0.33))
 ## #######################################
@@ -44,7 +44,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
+      ## a <- 0; b <- 1; DGP <- 'DGP4'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -184,7 +184,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         slct_MC_fcts                <- seq(from = i, to = n_target_fcts*B, by=n_target_fcts)
         slct_M                      <- missings_target_mat[,i]
         ##
-        par(mfrow=c(2,3))
+        if(any(DGP==c('DGP3','DGP4','DGP5'))){par(mfrow=c(2,3))}else{par(mfrow=c(2,2))}
         plot(Y_PS_FALSE_MC_mat[,i], type="b", ylim=range(Y_PS_FALSE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PS_FALSE")
         lines(Y_target_true_mat[,i]); points(y=Y_PS_FALSE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         ##
@@ -197,8 +197,10 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         plot(Y_PACE_MC_mat[,i], type="b", ylim=range(Y_PACE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PACE")
         lines(Y_target_true_mat[,i]); points(y=Y_PACE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         ##
+        if(any(DGP==c('DGP3','DGP4','DGP5'))){
         plot(Y_Kraus_MC_mat[,i], type="b", ylim=range(Y_Kraus_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="Kraus")
         lines(Y_target_true_mat[,i]); points(y=Y_Kraus_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
+        }
         par(mfrow=c(1,1))
         ##
         PS_FALSE_Int_BiasSq_vec[i] <- sum(c(rowMeans(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid

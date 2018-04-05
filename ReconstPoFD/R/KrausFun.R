@@ -34,7 +34,7 @@ reconstructKraus <- function(X_mat,
   if(is.null(reconst_fcts)){
     reconst_fcts <- 1:n
   }
-  X_reconst_mat <- X_mat[,reconst_fcts]
+  X_reconst_mat <- X_mat[, reconst_fcts, drop=FALSE]
   ##
   NonNA_fcts    <- apply(X_mat,2,function(x)!any(is.na(x)))
   X_Compl_mat   <- X_mat[,NonNA_fcts]

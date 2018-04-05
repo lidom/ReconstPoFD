@@ -28,7 +28,7 @@ however, the missingness process is adjusted to avoid missing 'holes'.
  
 a <- 0; b <- 1; n <- 100; DGP <- c('DGP3', 'DGP4')[2]
 if(DGP=='DGP3'){
-  mean_fun <- function(u){return(rep(0,length(u)))}
+  mean_fun <- function(u){return(rep(1,length(u)))}
 }
 if(DGP=='DGP4'){
   mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
@@ -42,10 +42,10 @@ U_true_mat  <- SimDat[['U_true_mat']]
 ##
 par(mfrow=c(2,1))
 matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
-main="Missings & Noise", xlim=c(a,b))
+main="Missings", xlim=c(a,b))
 lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-main="NoMissings & NoNoise", xlim=c(a,b))
+main="NoMissings", xlim=c(a,b))
 lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 par(mfrow=c(1,1))
 }

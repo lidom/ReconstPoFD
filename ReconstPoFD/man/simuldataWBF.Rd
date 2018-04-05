@@ -45,7 +45,3 @@ main="NoMissings & NoNoise", xlim=c(a,b))
 lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 par(mfrow=c(1,1))
 }
-\references{
-Kraus, D. (2015). Components and completion of partially observed functional data. 
-Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801.
-}

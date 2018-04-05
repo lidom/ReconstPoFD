@@ -147,7 +147,8 @@ reconstruct <- function(Ly,
                                        U_mat       = U_mat,
                                        reconst_fct = reconst_fcts[i],
                                        fdapace_obj = fdapace_obj,
-                                       K           = K, 
+                                       # K           = K,
+                                       K           = length(fdapace_obj$lambda), 
                                        pre_smooth  = FALSE,
                                        messages    = messages)
     }

@@ -21,7 +21,7 @@ b         <-   1
 ## Regular grid points
 nRegGrid  <-  51 
 ##
-n_target_fcts <- 2
+n_target_fcts <- 1
 ##
 determ_obs_interv <- c((a+(b-a)*0.33), (b-(b-a)*0.33))
 ## #######################################
@@ -44,7 +44,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP3'; n <- 70; m <- 25; nRegGrid <- 51; B <- 10
+      ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 70; m <- 25; nRegGrid <- 51; B <- 30
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -203,12 +203,13 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         }
         par(mfrow=c(1,1))
         ##
+        ## \int_{Missing} (Bias(t))^2 dt ('Integrated squared bias')
         PS_FALSE_Int_BiasSq_vec[i] <- sum(c(rowMeans(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
         PS_TRUE_Int_BiasSq_vec[i]  <- sum(c(rowMeans(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
         CEScores_Int_BiasSq_vec[i] <- sum(c(rowMeans(Y_CEScores_MC_mat[slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
         PACE_Int_BiasSq_vec[i]     <- sum(c(rowMeans(Y_PACE_MC_mat[    slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
         Kraus_Int_BiasSq_vec[i]    <- sum(c(rowMeans(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts]) - Y_target_true_mat[slct_M, i])^2) * (b-a)/nRegGrid
-        ##
+        ## \int_{Missing} Var(t) dt ('Integrated variance')
         PS_FALSE_Int_Var_vec[i]     <- sum(apply(Y_PS_FALSE_MC_mat[slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
         PS_TRUE_Int_Var_vec[i]      <- sum(apply(Y_PS_TRUE_MC_mat[ slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
         CEScores_Int_Var_vec[i]     <- sum(apply(Y_CEScores_MC_mat[slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
@@ -216,6 +217,13 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         Kraus_Int_Var_vec[i]        <- sum(apply(Y_Kraus_MC_mat[   slct_M, slct_MC_fcts], 1, var)) * (b-a)/nRegGrid
       }
       ##
+      BiasSq <- c(mean(PS_FALSE_Int_BiasSq_vec),mean(PS_TRUE_Int_BiasSq_vec),mean(CEScores_Int_BiasSq_vec),mean(PACE_Int_BiasSq_vec),mean(Kraus_Int_BiasSq_vec))
+      Var    <- c(mean(PS_FALSE_Int_Var_vec),   mean(PS_TRUE_Int_Var_vec),   mean(CEScores_Int_Var_vec),   mean(PACE_Int_Var_vec),   mean(Kraus_Int_Var_vec))
+      par(mfrow=c(1,3))
+      plot(x=1:5,y=BiasSq+Var, type="b")
+      plot(x=1:5,y=BiasSq, type="b")
+      plot(x=1:5,y=Var, type="b")
+      par(mfrow=c(1,1))      
       # ## Save results:
       # if(any(DGP==c('DGP1','DGP2'))){
       #   save(sim.results, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))

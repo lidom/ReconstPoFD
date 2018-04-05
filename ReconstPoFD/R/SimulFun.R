@@ -41,9 +41,9 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
   for(i in 1:n){
     if(is.null(determ_obs_interv)){
       ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
       }else{
         A_vec[i] = a
         B_vec[i] = b
@@ -66,7 +66,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
     if(DGP=="DGP1"){
       xi1 <- sqrt(10-(10/(n_basis + 1))*(k_vec - 1)) * stats::rnorm(n=n_basis)
       xi2 <- sqrt(10-(10/(n_basis + 1))*(k_vec))     * stats::rnorm(n=n_basis)
-    }
+    }# plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
     if(DGP=="DGP2"){
       xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
       xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
@@ -117,7 +117,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' @examples  
 #' a <- 0; b <- 1; n <- 100; DGP <- c('DGP3', 'DGP4')[2]
 #' if(DGP=='DGP3'){
-#'   mean_fun <- function(u){return(rep(0,length(u)))}
+#'   mean_fun <- function(u){return(rep(1,length(u)))}
 #' }
 #' if(DGP=='DGP4'){
 #'   mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
@@ -131,10 +131,10 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
 #' ##
 #' par(mfrow=c(2,1))
 #' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
-#' main="Missings & Noise", xlim=c(a,b))
+#' main="Missings", xlim=c(a,b))
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-#' main="NoMissings & NoNoise", xlim=c(a,b))
+#' main="NoMissings", xlim=c(a,b))
 #' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
 #' par(mfrow=c(1,1))
 simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
@@ -160,17 +160,21 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
   ##
   for(i in 1:n){
     if(DGP=='DGP3'){
-      mean_fun <- function(u){return(rep(0,length(u)))}
+      mean_fun <- function(u){return(rep(1,length(u)))}
       ##
-      xi1   <- sqrt(3^(-2*k_vec+1)) * stats::rnorm(n = length(k_vec))
-      xi2   <- sqrt(3^(-2*k_vec))   * stats::rnorm(n = length(k_vec))
+      xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
+      xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
     }
     if(DGP=='DGP4'){
+      # mean_fun <- function(u){return(rep(1,length(u)))}
       mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
       ##
-      xi1   <- 25*sqrt(25^(-(k_vec+1)/5)) * stats::rnorm(n = length(k_vec))
-      xi2   <- 25*sqrt(25^(-(k_vec  )/5)) * stats::rnorm(n = length(k_vec))
-    }
+      xi1   <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
+      xi2   <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
+      # xi1   <- 25*sqrt(25^(-(k_vec+1)/5)) * stats::rnorm(n = length(k_vec))
+      # xi2   <- 25*sqrt(25^(-(k_vec  )/5)) * stats::rnorm(n = length(k_vec))
+    }# matplot(y=cbind(9*sqrt(3^(-2*(k_vec+1))), 25*sqrt(25^(-(k_vec+1)/5))),x=k_vec)
+    # matplot(y=cbind(9*sqrt(3^(-2*(k_vec+1)))),x=k_vec)
     ##
     U_vec  <- seq(a, b, len=p)
     ##
@@ -182,9 +186,9 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
     ##
     if(is.null(determ_obs_interv)){
       ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
       }else{
         A_vec[i] = a
         B_vec[i] = b
@@ -246,9 +250,6 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
 #' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldataWBF
-#' @references 
-#' Kraus, D. (2015). Components and completion of partially observed functional data. 
-#' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
 #' @examples  
 #' a <- 0; b <- 1; n <- 100; DGP <- c('DGP5')
 #' ##
@@ -292,19 +293,19 @@ simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_o
     if(DGP=='DGP5'){
       mean_fun <- function(u){return( 3*((u-a)/(b-a))^2 + 3*cos(3*pi*((u-a)/(b-a)) ))}
       ##
-      rand_vec <- stats::rnorm(n = 6, sd=3)
+      rand_vec <- stats::rnorm(n = 15, sd=3)
     }
     ##
-    loc_vec <- seq(a, b, len=6)
+    loc_vec <- seq(a, b, len=length(rand_vec))
     U_vec   <- seq(a, b, len=p)
     ##
     Y_vec <- stats::spline(x = loc_vec, y = rand_vec, method = "natural", xout = U_vec)$y + mean_fun(U_vec)
     ##
     if(is.null(determ_obs_interv)){
       ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .6)){
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * 0.33))
-        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * 0.33), max = b)
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
       }else{
         A_vec[i] = a
         B_vec[i] = b

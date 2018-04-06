@@ -5,12 +5,14 @@ library("devtools")
 library("ReconstPoFD")  # contains the function 'reconstuct()'
 #library("doParallel")   # parallel-looping
 
+## Location to store the simulation results:
+setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/Simulation_Submission_2")
 
 ## #######################################
 ## Set seed
 set.seed(873)
 ## Number of MC-Repetitions
-B         <-  30
+B         <-  500
 ## #######################################
 
 ## #######################################
@@ -19,11 +21,11 @@ a         <-   0
 ## Upper-value of the total domain
 b         <-   1
 ## Regular grid points
-nRegGrid  <-  51 
+nRegGrid  <-  61 
 ##
 n_target_fcts <- 1
 ##
-determ_obs_interv <- c((a+(b-a)*0.45), (b-(b-a)*0.45))
+determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 ## #######################################
 
 ## #######################################
@@ -44,7 +46,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
     if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## a <- 0; b <- 1; DGP <- 'DGP1'; n <- 50; m <- 50; nRegGrid <- 51; B <- 20
+      ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 50; m <- 50; nRegGrid <- 61; B <- 30
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -52,11 +54,11 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       ## #######################################################################
       ## Preselecting partially observed target functions for the reconstructions
       ## #######################################################################
-      if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid)}
-      if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid)}
-      if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid)}
-      if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid)}
-      if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP5', nRegGrid = nRegGrid)}
+      if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP5', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       ## 
       target_fcts       <- 1:n_target_fcts
       ##
@@ -225,22 +227,22 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
       ##
       BiasSq <- c(mean(PS_FALSE_Int_BiasSq_vec),mean(PS_TRUE_Int_BiasSq_vec),mean(CEScores_Int_BiasSq_vec),mean(PACE_Int_BiasSq_vec),mean(Kraus_Int_BiasSq_vec))
       Var    <- c(mean(PS_FALSE_Int_Var_vec),   mean(PS_TRUE_Int_Var_vec),   mean(CEScores_Int_Var_vec),   mean(PACE_Int_Var_vec),   mean(Kraus_Int_Var_vec))
+      ##
       par(mfrow=c(1,3))
-      barplot(c(BiasSq+Var)[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
-              , main="MSPE", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
-      mtext(text = expression(paste0("MSPE (1.0≘", widehat(==), round(max(c(BiasSq+Var)[!is.na(BiasSq)]), digits=1),")")), side = 3)
-      barplot(c(BiasSq    )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
-              , main="Bias Squared", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
-      barplot(c(Var       )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
-              , main="Variance", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+      barplot(c(BiasSq+Var)[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)]), main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+      mtext(text = paste0("MSPE (", round(max(c(BiasSq+Var)[!is.na(BiasSq)]),2),")"), side = 3, line = 1)
+      barplot(c(BiasSq    )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)]), main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+      mtext(text = "Squared Bias", side = 3, line = 1)
+      barplot(c(Var       )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)]), main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+      mtext(text = "Variance", side = 3, line = 1)
       par(mfrow=c(1,1))      
-      # ## Save results:
-      # if(any(DGP==c('DGP1','DGP2'))){
-      #   save(sim.results, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
-      # }
-      # if(any(DGP==c('DGP3','DGP4'))){
-      #   save(sim.results, file = paste0(DGP,"_n",n,"_simResults.RData"))
-      # }
+      ## Save results:
+      if(any(DGP==c('DGP1','DGP2'))){
+        save(BiasSq, Var, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
+      }
+      if(any(DGP==c('DGP3','DGP4','DGP5'))){
+        save(BiasSq, Var, file = paste0(DGP,"_n",n,"_simResults.RData"))
+      }
     }
   }
 }

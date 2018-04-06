@@ -99,7 +99,7 @@ reconstruct <- function(Ly,
   Lu_align      <- split(U_mat,      rep(1:n, each = nRegGrid))
   ##
   ## K AIC
-  if(is.null(K)){#& method!="CEScores"
+  if(is.null(K) & method!="CEScores"){#
    
     # K_AIC <- K_aic_fun(Ly_cent     = Ly_align_cent,
     #                    Lu          = Lu_align,
@@ -128,7 +128,8 @@ reconstruct <- function(Ly,
                             pre_smooth       = ifelse(method=="PS_TRUE", TRUE, FALSE))
       K[i] <- which.min(AIC_vec) 
     }
-  }else{K <- rep(K, length(reconst_fcts))}
+  }
+  if(is.null(K) & method=="CEScores"){K <- rep(length(fdapace_obj$lambda), length(reconst_fcts))}
   ## ##################################################################
   ## ##################################################################
   ## Reconstructing all functions
@@ -164,8 +165,7 @@ reconstruct <- function(Ly,
                                        U_mat       = U_mat,
                                        reconst_fct = reconst_fcts[i],
                                        fdapace_obj = fdapace_obj,
-                                       # K           = K,
-                                       K           = length(fdapace_obj$lambda), 
+                                       K           = K[1], 
                                        pre_smooth  = FALSE,
                                        messages    = messages)
     }

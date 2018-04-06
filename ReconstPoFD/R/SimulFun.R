@@ -10,7 +10,7 @@
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples  
-#' DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[5]
+#' DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[3]
 #' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 #' Y_mat         <- SimDat[['Y_mat']]
 #' U_mat         <- SimDat[['U_mat']]
@@ -39,9 +39,9 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3',
 simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
-  mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
-  eps_var  <- .20
-  n_basis  <-  10
+  mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a)) ))}
+  eps_var  <- .025
+  n_basis  <-  50
   ##
   ## Generation of prediction points U
   U_true_mat    <- matrix(seq(a,b,len=nRegGrid), nRegGrid, n)
@@ -77,8 +77,10 @@ simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')
   k_vec      <- 1:n_basis
   for(i in 1:n){
     if(DGP=="DGP1"){
-      xi1 <- sqrt(10-(10/(n_basis + 1))*(k_vec - 1)) * stats::rnorm(n=n_basis)
-      xi2 <- sqrt(10-(10/(n_basis + 1))*(k_vec))     * stats::rnorm(n=n_basis)
+      xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
+      xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
+      #xi1 <- sqrt(30-(30/(n_basis + 1))*(k_vec - 1)) * stats::rnorm(n=n_basis)
+      #xi2 <- sqrt(30-(30/(n_basis + 1))*(k_vec))     * stats::rnorm(n=n_basis)
     }# plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
     if(DGP=="DGP2"){
       xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))

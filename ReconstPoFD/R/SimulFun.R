@@ -5,32 +5,43 @@
 #' @param m                 Number of discretization points 
 #' @param a                 Lower interval boundary
 #' @param b                 Upper interval boundary
-#' @param n_basis           Number of basis functions
 #' @param DGP               Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
 #' @param nRegGrid          Number of grid-points used for the equidistant 'workGrid'.
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples  
-#' a <- 0; b <- 1; m <- 15; n <- 100
-#' mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
-#' SimDat   <- simuldata(n = n, m = m, a = a, b = b)
-#' ## 
-#' Y_mat       <- SimDat[['Y_mat']]
-#' U_mat       <- SimDat[['U_mat']]
-#' Y_true_mat  <- SimDat[['Y_true_mat']]
-#' U_true_mat  <- SimDat[['U_true_mat']]
+#' DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[5]
+#' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
+#' Y_mat         <- SimDat[['Y_mat']]
+#' U_mat         <- SimDat[['U_mat']]
+#' Y_true_mat    <- SimDat[['Y_true_mat']]
+#' U_true_mat    <- SimDat[['U_true_mat']]
+#' mean_true_vec <- SimDat[['mean_true_vec']]
 #' ##
 #' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings & Noise")
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+#' matplot(x=U_mat[,1:5],      y=Y_mat[,1:5], col=gray(.5), type="l", 
+#' main=ifelse(any(DGP==c("DGP1","DGP2")), "Missings", "Missings"))
+#' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
+#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
+#' main=ifelse(any(DGP==c("DGP1","DGP2")), "No Missings & No Noise", "No Missings"))
+#' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[1], nRegGrid = 51, determ_obs_interv = NULL){
+  if(DGP=="DGP1"){SimDat <- simuldataDGP_1_2(n=n,m=m,a=a,b=b,DGP='DGP1',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP2"){SimDat <- simuldataDGP_1_2(n=n,m=m,a=a,b=b,DGP='DGP2',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP3"){SimDat <- simuldataKraus(  n=n,    a=a,b=b,DGP='DGP3',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP4"){SimDat <- simuldataKraus(  n=n,    a=a,b=b,DGP='DGP4',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP5"){SimDat <- simuldataWBF(    n=n,    a=a,b=b,DGP='DGP5',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  return(SimDat)
+}
+
+##-------------------------------------------------------------------------------------
+simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
   eps_var  <- .20
+  n_basis  <-  10
   ##
   ## Generation of prediction points U
   U_true_mat    <- matrix(seq(a,b,len=nRegGrid), nRegGrid, n)
@@ -57,6 +68,8 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
     U_mat[,i] <- stats::runif(n=m, min = A_vec[i], max = B_vec[i])
     ## ordering
     U_mat[,i] <- unique(U_mat[,i][order(U_mat[,i])])
+    U_mat[,i][which.min(U_mat[,i])] <- A_vec[i]
+    U_mat[,i][which.max(U_mat[,i])] <- B_vec[i]
   }
   ##
   Y_true_mat <- matrix(NA, nRegGrid, n)
@@ -85,58 +98,24 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, n_basis = 10, DGP=c('DGP1',
       }))) + mean_fun(U_mat[,i]) + stats::rnorm(n=m,  mean = 0, sd=sqrt(eps_var)))
     ##
   }
-  return(list("Y_mat"       = Y_mat, 
-              "U_mat"       = U_mat,
-              "Y_true_mat"  = Y_true_mat, 
-              "U_true_mat"  = U_true_mat,
+  return(list("Y_mat"         = Y_mat, 
+              "U_mat"         = U_mat,
+              "Y_true_mat"    = Y_true_mat, 
+              "U_true_mat"    = U_true_mat,
               ##
-              "Y_list"      = split(Y_mat, rep(1:ncol(Y_mat), each = nrow(Y_mat))), 
-              "U_list"      = split(U_mat, rep(1:ncol(U_mat), each = nrow(U_mat))),
-              "Y_true_list" = split(Y_true_mat, rep(1:ncol(Y_true_mat), each = nrow(Y_true_mat))), 
-              "U_true_list" = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat))),
+              "Y_list"        = split(Y_mat, rep(1:ncol(Y_mat), each = nrow(Y_mat))), 
+              "U_list"        = split(U_mat, rep(1:ncol(U_mat), each = nrow(U_mat))),
+              "Y_true_list"   = split(Y_true_mat, rep(1:ncol(Y_true_mat), each = nrow(Y_true_mat))), 
+              "U_true_list"   = split(U_true_mat, rep(1:ncol(U_true_mat), each = nrow(U_true_mat))),
               ##
-              "A_vec"       = A_vec,
-              "B_vec"       = B_vec
+              "A_vec"         = A_vec,
+              "B_vec"         = B_vec,
+              ##
+              "mean_true_vec" = mean_fun(U_true_mat[,1])
   ))
 }
 
-#' Simulate Data (Adapted from Kraus (2015))
-#'
-#' This function allows to simulate functional data as used in the simulation study of Kraus, D. (2015), 
-#' however, the missingness process is adjusted to avoid missing 'holes'.
-#' @param n          Number of functions
-#' @param a          Lower interval boundary
-#' @param b          Upper interval boundary
-#' @param DGP        Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
-#' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
-#' @export simuldataKraus
-#' @references 
-#' Kraus, D. (2015). Components and completion of partially observed functional data. 
-#' Journal of the Royal Statistical Society: Series B (Statistical Methodology), 77(4), 777-801. 
-#' @examples  
-#' a <- 0; b <- 1; n <- 100; DGP <- c('DGP3', 'DGP4')[2]
-#' if(DGP=='DGP3'){
-#'   mean_fun <- function(u){return(rep(1,length(u)))}
-#' }
-#' if(DGP=='DGP4'){
-#'   mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
-#' }
-#' SimDat   <- simuldataKraus(n = n, a = a, b = b, DGP = DGP)
-#' ## 
-#' Y_mat       <- SimDat[['Y_mat']]
-#' U_mat       <- SimDat[['U_mat']]
-#' Y_true_mat  <- SimDat[['Y_true_mat']]
-#' U_true_mat  <- SimDat[['U_true_mat']]
-#' ##
-#' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
-#' main="Missings", xlim=c(a,b))
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-#' main="NoMissings", xlim=c(a,b))
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' par(mfrow=c(1,1))
+##-------------------------------------------------------------------------------------
 simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
@@ -236,40 +215,13 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
               "U_true_list" = U_true_list,
               ##
               "A_vec"       = A_vec,
-              "B_vec"       = B_vec
+              "B_vec"       = B_vec,
+              ##
+              "mean_true_vec" = mean_fun(U_true_mat[,1])
   ))
 }
 
-#' Simulate Data without Basis Functions
-#'
-#' This function allows to simulate functional data without using the typical global basis functions.
-#' @param n          Number of functions
-#' @param a          Lower interval boundary
-#' @param b          Upper interval boundary
-#' @param DGP        Data Generating Process. DGP3: The DGP of Kraus. DGP4: Similar to the DGP of Kraus, but with a mean function and slower decaying eigenvalues.
-#' @param nRegGrid    Number of grid-points used for the equidistant 'workGrid'.
-#' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
-#' @export simuldataWBF
-#' @examples  
-#' a <- 0; b <- 1; n <- 100; DGP <- c('DGP5')
-#' ##
-#' mean_fun <- function(u){return( 3*((u-a)/(b-a))^2 + 3*cos(3*pi*((u-a)/(b-a)) ))}
-#' ##
-#' SimDat   <- simuldataWBF(n = n, a = a, b = b, DGP = DGP)
-#' ## 
-#' Y_mat       <- SimDat[['Y_mat']]
-#' U_mat       <- SimDat[['U_mat']]
-#' Y_true_mat  <- SimDat[['Y_true_mat']]
-#' U_true_mat  <- SimDat[['U_true_mat']]
-#' ##
-#' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
-#' main="Missings & Noise", xlim=c(a,b))
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-#' main="NoMissings & NoNoise", xlim=c(a,b))
-#' lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-#' par(mfrow=c(1,1))
+##-------------------------------------------------------------------------------------
 simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
@@ -291,9 +243,9 @@ simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_o
   ##
   for(i in 1:n){
     if(DGP=='DGP5'){
-      mean_fun <- function(u){return( 3*((u-a)/(b-a))^2 + 3*cos(3*pi*((u-a)/(b-a)) ))}
+      mean_fun <- function(u){return( 10*((u-a)/(b-a))^2  )}
       ##
-      rand_vec <- stats::rnorm(n = 15, sd=3)
+      rand_vec <- stats::rnorm(n = 3, sd=3)
     }
     ##
     loc_vec <- seq(a, b, len=length(rand_vec))
@@ -344,7 +296,9 @@ simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_o
               "U_true_list" = U_true_list,
               ##
               "A_vec"       = A_vec,
-              "B_vec"       = B_vec
+              "B_vec"       = B_vec,
+              ##
+              "mean_true_vec" = mean_fun(U_true_mat[,1])
   ))
 }
 

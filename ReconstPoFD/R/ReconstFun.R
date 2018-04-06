@@ -13,8 +13,8 @@
 #' @param messages     Printing messages? (default: messages=FALSE)
 #' @export reconstruct
 #' @examples  
-#' a <- 0; b <- 1; n <- 50
-#' SimDat   <- simuldataKraus(n = n, a = a, b = b)
+#' a <- 0; b <- 1
+#' SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
 #' ## 
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
@@ -99,32 +99,37 @@ reconstruct <- function(Ly,
   Lu_align      <- split(U_mat,      rep(1:n, each = nRegGrid))
   ##
   ## K AIC
-  if(is.null(K) ){#& method!="CEScores"
-    K_AIC <- K_aic_fun(Ly_cent     = Ly_align_cent,
-                       Lu          = Lu_align,
-                       cov_la_mat  = cov_est_mat,
-                       workGrid    = workGrid,
-                       K_max       = K_max,
-                       messages    = messages)
-    K <- K_AIC
-  }
-  # if(is.null(K) & method=="CEScores"){
-  #   K <- length(fdapace_obj$lambda)
-  # }
+  if(is.null(K)){#& method!="CEScores"
+   
+    # K_AIC <- K_aic_fun(Ly_cent     = Ly_align_cent,
+    #                    Lu          = Lu_align,
+    #                    cov_la_mat  = cov_est_mat,
+    #                    workGrid    = workGrid,
+    #                    K_max       = K_max,
+    #                    messages    = messages)
+    # K <- rep(K_AIC, length(reconst_fcts))
+    
+    slct_compl <- apply(U_mat,2,function(x){min(x,na.rm = TRUE)==workGrid[1] & max(x,na.rm = TRUE)==workGrid[nRegGrid]})
+    K          <- numeric(length(reconst_fcts))
+    ##
+    for(i in seq_len(length(reconst_fcts))){ # i <- 1
+      X_tmp      <- Y_cent_mat[,reconst_fcts[i]]
+      U_tmp      <- U_mat[,reconst_fcts[i]]
+      ##
+      O_bool_vec <- workGrid >= min(U_tmp,na.rm = TRUE) & workGrid <= max(U_tmp,na.rm = TRUE) 
+      M_bool_vec <- !O_bool_vec 
+      ##                    
+      AIC_vec <- K_aic2_fun(cov_la_mat       = cov_est_mat, 
+                            X_Compl_cent_mat = Y_cent_mat[,slct_compl], 
+                            U_Compl_mat      = U_mat[,slct_compl], 
+                            workGrid         = workGrid, 
+                            M_bool_vec       = M_bool_vec, 
+                            K=1:K_max, 
+                            pre_smooth       = ifelse(method=="PS_TRUE", TRUE, FALSE))
+      K[i] <- which.min(AIC_vec) 
+    }
+  }else{K <- rep(K, length(reconst_fcts))}
   ## ##################################################################
-  ## Re-Fitted Covariance:
-  if(method!="CEScores"){
-    e_list        <- eigen(cov_est_mat, symmetric = TRUE)
-    positiveInd   <- e_list[['values']] >= 0
-    eval_vec      <- e_list[['values']][positiveInd]
-    evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
-    if(K>1){
-      cov_est_refit_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
-    }
-    if(K==1){
-      cov_est_refit_mat <- evec_mat[, 1,drop=FALSE]  %*% t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
-    }
-  }
   ## ##################################################################
   ## Reconstructing all functions
   ## As list, since this facilitates a future generalization to 'random m'
@@ -133,6 +138,18 @@ reconstruct <- function(Ly,
   ##
   for(i in 1:length(reconst_fcts)){ # i <- 1
     if(method!="CEScores"){
+      ## Re-Fitted Covariance:
+      e_list        <- eigen(cov_est_mat, symmetric = TRUE)
+      positiveInd   <- e_list[['values']] >= 0
+      eval_vec      <- e_list[['values']][positiveInd]
+      evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
+      if(K>1){
+        cov_est_refit_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
+      }
+      if(K==1){
+        cov_est_refit_mat <- evec_mat[, 1,drop=FALSE]  %*% t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
+      }
+      ##
       tmp  <- reconst_fun(cov_la_mat  = cov_est_refit_mat, 
                           workGrid    = workGrid, 
                           Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
@@ -227,7 +244,7 @@ reconst_fun <- function(
   xi_sm_i         <- unname(c(stats::lm(c(stats::na.omit(Y_cent_sm_i)) ~ -1 + evec_sm_compl_at_sm_i[,1:K,drop=FALSE])$coefficients))
   ## Refitting (only of effect in the more noisy first run)
   Y_cent_i_fit    <- c(evec_sm_compl[,1:K,drop=FALSE] %*% xi_sm_i)
-  xi_sm_i_refit   <- try(unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients)))
+  xi_sm_i_refit   <- try(unname(c(stats::lm(Y_cent_i_fit ~ -1 + evec_sm_compl[,1:K,drop=FALSE])$coefficients)), silent=TRUE)
   ## Use the refitted version only if no error was produced:
   if(!is.error(xi_sm_i_refit)){xi_sm_i <- xi_sm_i_refit} 
   ## #################################################
@@ -438,6 +455,77 @@ reconst_use_CEScores_fun <- function(
 
 ## ###########################################################
 ## ###########################################################
+## -------------------------------------------------------------------------
+K_aic2_fun <- function(cov_la_mat, X_Compl_cent_mat, U_Compl_mat, workGrid, M_bool_vec, K, pre_smooth){
+  ##
+  n_Compl  <- ncol(X_Compl_cent_mat)
+  ##
+  ## #########################################################
+  ## Nonparametric variance estimation 
+  ## Gasser, Stroka, Jennen-Steinmetz (1986, Biometrika)
+  ## #########################################################
+  sig2_GSJ_eps_vec <- NULL
+  for(i in 1:n_Compl){# i <- 1
+    y.vec <- c(na.omit(X_Compl_cent_mat[,i]))
+    x.vec <- c(na.omit(U_Compl_mat[,i]))
+    ##
+    a.seq      <- (diff(x.vec, lag=1)[-1]/diff(x.vec, lag=2))
+    b.seq      <- (diff(x.vec, lag=1)[-length(diff(x.vec, lag=1))]/diff(x.vec, lag=2))
+    c.sq       <- 1/(a.seq^2+b.seq^2+1)
+    ##
+    pseudo.eps <- a.seq * y.vec[-c( length(y.vec)-1,  length(y.vec))] + b.seq * y.vec[-c(1,2)] - y.vec[-c(1,length(y.vec))]
+    sig2.GSJ   <- mean(c(pseudo.eps^2*c.sq))
+    sig2_GSJ_eps_vec <- c(sig2_GSJ_eps_vec, sig2.GSJ)
+  }
+  sig2_GSJ_eps  <- mean(sig2_GSJ_eps_vec)
+  ##
+  rss_vec  <- rep(NA,n_Compl)
+  L_vec  <- rep(NA,n_Compl)
+  ##
+  for(j in 1:n_Compl){# j <- 1
+    X_tmp             <-  X_Compl_cent_mat[,j]
+    U_tmp             <-  U_Compl_mat[,j]
+    X_tmp[M_bool_vec] <- NA
+    U_tmp[M_bool_vec] <- NA
+    ##
+    if(length(c(na.omit(U_tmp)))==0){
+      rss_vec[j] <- NA
+    }else{
+      ##
+      result_tmp <- try(
+        reconst_fun(cov_la_mat     = cov_la_mat, 
+                    workGrid       = workGrid, 
+                    Y_cent_sm_i    = c(stats::na.omit(X_tmp)), 
+                    U_sm_i         = c(stats::na.omit(U_tmp)), 
+                    K              = K,
+                    pre_smooth     = pre_smooth, 
+                    messages       = FALSE)
+        , silent = TRUE)
+    }
+    if(is.error(result_tmp)){
+      rss_vec[j] <- NA
+    }else{
+      X_fit      <- c(result_tmp[['y_reconst']])
+      ##
+      slct_NonNA <- !is.na(X_Compl_cent_mat[M_bool_vec,j])
+      ##
+      rss_vec[j] <- sum((X_fit[M_bool_vec][slct_NonNA] - X_Compl_cent_mat[M_bool_vec,j][slct_NonNA])^2)
+    }
+  }
+  #gcv <- sum(rss_vec)/((1-K/n_Compl)^2)
+  rss_vec <- c(na.omit(rss_vec))
+  n_obs   <- length(rss_vec)
+  L_vec   <- -(n_obs*log(2*pi)/2)-(n_obs*log(sig2_GSJ_eps)/2)-(rss_vec/(2*sig2_GSJ_eps))
+  ##
+  aic <- -sum(L_vec) + K
+  ##
+  return(aic)
+}
+K_aic2_fun <- Vectorize(FUN = K_aic2_fun, vectorize.args = "K")
+
+
+
+## ------------------------------------------------------------------------
 K_aic_fun <- function(Ly_cent, 
                       Lu,
                       cov_la_mat,

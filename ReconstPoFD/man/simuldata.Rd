@@ -4,8 +4,8 @@
 \alias{simuldata}
 \title{Simulate Data}
 \usage{
-simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
-  DGP = c("DGP1", "DGP2")[1], nRegGrid = 51, determ_obs_interv = NULL)
+simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
+  "DGP3", "DGP4", "DGP5")[1], nRegGrid = 51, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -15,8 +15,6 @@ simuldata(n = 100, m = 15, a = 0, b = 1, n_basis = 10,
 \item{a}{Lower interval boundary}
 
 \item{b}{Upper interval boundary}
-
-\item{n_basis}{Number of basis functions}
 
 \item{DGP}{Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores.}
 
@@ -29,19 +27,20 @@ This function allows to simulate partially observed functional data.
 }
 \examples{
  
-a <- 0; b <- 1; m <- 15; n <- 100
-mean_fun <- function(u){return( ((u-a)/(b-a)) + 2*sin(2*pi*((u-a)/(b-a)) ))}
-SimDat   <- simuldata(n = n, m = m, a = a, b = b)
-## 
-Y_mat       <- SimDat[['Y_mat']]
-U_mat       <- SimDat[['U_mat']]
-Y_true_mat  <- SimDat[['Y_true_mat']]
-U_true_mat  <- SimDat[['U_true_mat']]
+DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[5]
+SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
+Y_mat         <- SimDat[['Y_mat']]
+U_mat         <- SimDat[['U_mat']]
+Y_true_mat    <- SimDat[['Y_true_mat']]
+U_true_mat    <- SimDat[['U_true_mat']]
+mean_true_vec <- SimDat[['mean_true_vec']]
 ##
 par(mfrow=c(2,1))
-matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings & Noise")
-lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
-matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", main="NoMissings & NoNoise")
-lines(x=U_true_mat[,1], y=mean_fun(U_true_mat[,1]), col="red")
+matplot(x=U_mat[,1:5],      y=Y_mat[,1:5], col=gray(.5), type="l", 
+main=ifelse(any(DGP==c("DGP1","DGP2")), "Missings", "Missings"))
+lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
+matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
+main=ifelse(any(DGP==c("DGP1","DGP2")), "No Missings & No Noise", "No Missings"))
+lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 par(mfrow=c(1,1))
 }

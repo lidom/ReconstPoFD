@@ -103,6 +103,7 @@ for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
         ##
         Y_mat      <- cbind(Y_target_mat, SimDat[['Y_mat']])
         U_mat      <- cbind(U_target_mat, SimDat[['U_mat']])
+        ##
         Y_list     <- c(Y_target_list,    SimDat[['Y_list']])
         U_list     <- c(U_target_list,    SimDat[['U_list']])
         ##

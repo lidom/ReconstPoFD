@@ -480,31 +480,29 @@ K_aic2_fun <- function(cov_la_mat, X_Compl_cent_mat, U_Compl_mat, workGrid, M_bo
   sig2_GSJ_eps  <- mean(sig2_GSJ_eps_vec)
   ##
   rss_vec  <- rep(NA,n_Compl)
-  L_vec  <- rep(NA,n_Compl)
+  L_vec    <- rep(NA,n_Compl)
   ##
-  for(j in 1:n_Compl){# j <- 1
-    X_tmp             <-  X_Compl_cent_mat[,j]
-    U_tmp             <-  U_Compl_mat[,j]
+  for(j in seq_len(n_Compl)){# j <- 1
+    X_tmp             <- X_Compl_cent_mat[,j]
+    U_tmp             <- U_Compl_mat[,j]
     X_tmp[M_bool_vec] <- NA
     U_tmp[M_bool_vec] <- NA
     ##
-    if(length(c(na.omit(U_tmp)))==0){
-      rss_vec[j] <- NA
-    }else{
-      ##
-      result_tmp <- try(
-        reconst_fun(cov_la_mat     = cov_la_mat, 
-                    workGrid       = workGrid, 
-                    Y_cent_sm_i    = c(stats::na.omit(X_tmp)), 
-                    U_sm_i         = c(stats::na.omit(U_tmp)), 
-                    K              = K,
-                    pre_smooth     = pre_smooth, 
-                    messages       = FALSE)
-        , silent = TRUE)
-    }
-    if(is.error(result_tmp)){
-      rss_vec[j] <- NA
-    }else{
+    # if(length(c(na.omit(U_tmp)))==0){
+    #   rss_vec[j] <- NA
+    # }else{
+    ##
+    result_tmp <- try(
+      reconst_fun(cov_la_mat     = cov_la_mat, 
+                  workGrid       = workGrid, 
+                  Y_cent_sm_i    = c(stats::na.omit(X_tmp)), 
+                  U_sm_i         = c(stats::na.omit(U_tmp)), 
+                  K              = K,
+                  pre_smooth     = pre_smooth, 
+                  messages       = FALSE)
+      , silent = TRUE)
+    #}
+    if(!is.error(result_tmp)){
       X_fit      <- c(result_tmp[['y_reconst']])
       ##
       slct_NonNA <- !is.na(X_Compl_cent_mat[M_bool_vec,j])

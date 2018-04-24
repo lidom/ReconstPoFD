@@ -41,9 +41,9 @@ determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 (Start.Time <- Sys.time())
 
 
-for(DGP in c('DGP1','DGP2','DGP3','DGP4')){
-  for(n in c(100, 200)){
-    if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,25,50)}else{m_seq <- NA}
+for(DGP in c('DGP1','DGP4','DGP5')){
+  for(n in c(60, 120)){
+    if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15,50)}else{m_seq <- NA}
     for(m in m_seq){
       
       ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 50; m <- 50; nRegGrid <- 61; B <- 30
@@ -252,3 +252,48 @@ End.Time <- Sys.time()
 ## Run-time:
 round(End.Time - Start.Time, 2)
 ##------------------------------------
+
+
+
+DGP <- c('DGP1','DGP4','DGP5')
+m   <- c(15,  50)[1] # c(15,25,50)[3]
+n   <- c(60, 120)[1] # c(100, 200)[1]
+
+## Load results:
+if(any(DGP==c('DGP1','DGP2'))){
+  load(file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
+}
+if(any(DGP==c('DGP3','DGP4','DGP5'))){
+  load(file = paste0(DGP,"_n",n,"_simResults.RData"))
+}
+##
+mse_vec    <- c(BiasSq+Var)[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
+bias2_vec  <- c(BiasSq    )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
+var_vec    <- c(Var       )[!is.na(BiasSq)]/max(c(BiasSq+Var)[!is.na(BiasSq)])
+##
+winsorize_x = function(x, cut = 0.01){
+  cut_point_top <- quantile(x, 1 - cut, na.rm = T)
+  cut_point_bottom <- quantile(x, cut, na.rm = T)
+  i = which(x >= cut_point_top) 
+  x[i] = cut_point_top
+  j = which(x <= cut_point_bottom) 
+  x[j] = cut_point_bottom
+  return(x)
+}
+##
+cut <- 0
+#
+mse_vec   <- winsorize_x(mse_vec,   cut=cut)
+bias2_vec <- winsorize_x(bias2_vec, cut=cut)
+var_vec   <- winsorize_x(var_vec,   cut=cut)
+##
+par(mfrow=c(1,3))
+barplot(mse_vec, main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+mtext(text = paste0("MSPE (", round(max(c(BiasSq+Var)[!is.na(BiasSq)]),2),")"), side = 3, line = 1)
+barplot(bias2_vec, main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+mtext(text = "Squared Bias", side = 3, line = 1)
+barplot(var_vec, main="", names.arg = c("NoPS","YesPS","CES","PACE","Kraus")[!is.na(BiasSq)])
+mtext(text = "Variance", side = 3, line = 1)
+par(mfrow=c(1,1))      
+
+

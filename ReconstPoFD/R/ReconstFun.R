@@ -66,6 +66,8 @@ reconstruct <- function(Ly,
                                  "dataType"       = "Sparse", 
                                  "kernel"         = "gauss",
                                  "methodMuCovEst" = "smooth",
+                                 "methodBwCov"    = 'GCV',
+                                 "methodBwMu"     = 'GCV',
                                  "nRegGrid"       = nRegGrid
                                  ))
   ## Regular grid
@@ -315,6 +317,8 @@ reconst_use_CEScores_fun <- function(
                                     "dataType"       = "Sparse", 
                                     "kernel"         = "gauss",
                                     "methodMuCovEst" = "smooth",
+                                    "methodBwCov"    = 'GCV',
+                                    "methodBwMu"     = 'GCV',
                                     #"userCov"=list("t"=grid_sm_compl_vec, "cov"=cov_sm_compl_mat),
                                     #"userMu" =list("t"=grid_sm_compl_vec, "mu" =rep(0,length(grid_sm_compl_vec))),
                                     "methodSelectK" = K

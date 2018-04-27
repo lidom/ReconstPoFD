@@ -318,10 +318,10 @@ reconst_use_CEScores_fun <- function(
                                     "kernel"         = "gauss",
                                     "methodMuCovEst" = "smooth",
                                     "methodBwCov"    = 'GCV',
-                                    "methodBwMu"     = 'GCV',
+                                    "methodBwMu"     = 'GCV'#,
                                     #"userCov"=list("t"=grid_sm_compl_vec, "cov"=cov_sm_compl_mat),
                                     #"userMu" =list("t"=grid_sm_compl_vec, "mu" =rep(0,length(grid_sm_compl_vec))),
-                                    "methodSelectK" = K
+                                    # "methodSelectK" = K
                                   ))
   ##
   K              <- length(fdapace_sm_obj$lambda)

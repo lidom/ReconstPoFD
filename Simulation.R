@@ -258,7 +258,7 @@ round(End.Time - Start.Time, 2)
 
 ## rm(list=ls())
 
-DGP <- c('DGP1','DGP4','DGP5')[3]
+DGP <- c('DGP1','DGP4','DGP5')[2]
 m   <- c(15,  50)[2] # c(15,25,50)[3]
 n   <- c(60, 120)[2] # c(100, 200)[1]
 

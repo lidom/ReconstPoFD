@@ -120,7 +120,7 @@ for(DGP in c('DGP1','DGP4','DGP5')){
         result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                     Lu           = U_list,
                                                     K            = NULL,
-                                                    K_max        = 5,
+                                                    K_max        = 4,
                                                     method       = "PS_FALSE",
                                                     reconst_fcts = target_fcts, 
                                                     nRegGrid     = nRegGrid)
@@ -132,7 +132,7 @@ for(DGP in c('DGP1','DGP4','DGP5')){
         result_PS_TRUE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                    Lu           = U_list,
                                                    K            = NULL,
-                                                   K_max        = 5,
+                                                   K_max        = 4,
                                                    method       = "PS_TRUE",
                                                    reconst_fcts = target_fcts,
                                                    nRegGrid     = nRegGrid)
@@ -145,7 +145,7 @@ for(DGP in c('DGP1','DGP4','DGP5')){
           result_CEScores <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                       Lu           = U_list,
                                                       K            = NULL,
-                                                      K_max        = 5,
+                                                      K_max        = 4,
                                                       method       = "CEScores",
                                                       BwMu         = h.mu,
                                                       BwCov        = h.cov,

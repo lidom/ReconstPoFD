@@ -5,7 +5,8 @@
 \title{Reconstruct partially observed functions}
 \usage{
 reconstruct(Ly, Lu, K = NULL, K_max = 4, method = c("PS_TRUE", "PS_FALSE",
-  "CEScores")[3], reconst_fcts = NULL, nRegGrid = 51, messages = FALSE)
+  "CEScores")[3], BwMu = NULL, BwCov = NULL, reconst_fcts = NULL,
+  nRegGrid = 51, messages = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -16,9 +17,11 @@ reconstruct(Ly, Lu, K = NULL, K_max = 4, method = c("PS_TRUE", "PS_FALSE",
 
 \item{K_max}{Maximum K (used in the AIC-type criterion)}
 
-\item{method}{If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). 
-If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}).
-If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.}
+\item{method}{If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}). If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.}
+
+\item{BwMu}{Bandwidth for estimating the mean function (default: 0.05 of the support)}
+
+\item{BwCov}{Bandwidth for estimating the cov function (default: 0.10 of the support)}
 
 \item{reconst_fcts}{A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.}
 

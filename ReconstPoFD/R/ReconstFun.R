@@ -5,11 +5,9 @@
 #' @param Lu           List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
 #' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
 #' @param K_max        Maximum K (used in the AIC-type criterion)
-#' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). 
-#'                     If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}).
-#'                     If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
-#' @param BwMu         Bandwidth for estimating the mean function (default: 5% of the support)
-#' @param BwCov        Bandwidth for estimating the cov function (default: 10% of the support)                   
+#' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}). If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
+#' @param BwMu         Bandwidth for estimating the mean function (default: 0.05 of the support)
+#' @param BwCov        Bandwidth for estimating the cov function (default: 0.10 of the support)                   
 #' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
 #' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
 #' @param messages     Printing messages? (default: messages=FALSE)
@@ -63,10 +61,10 @@ reconstruct <- function(Ly,
     reconst_fcts <- 1:n
   }
   if(is.null(BwMu)){ 
-    h.mu  <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.05
+    BwMu  <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.05
   }
   if(is.null(BwCov)){ 
-    h.cov <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.10
+    BwCov <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.10
   }
   ##
   ## Estimate Mean and Covariance 
@@ -136,12 +134,15 @@ reconstruct <- function(Ly,
                             U_Compl_mat      = U_mat[,slct_compl], 
                             workGrid         = workGrid, 
                             M_bool_vec       = M_bool_vec, 
-                            K=1:K_max, 
+                            K                = 1:K_max, 
                             pre_smooth       = ifelse(method=="PS_TRUE", TRUE, FALSE))
-      K[i] <- which.min(AIC_vec) 
+      K[i] <- unique(which.min(AIC_vec))
     }
   }
-  if(is.null(K) & method=="CEScores"){K <- rep(length(fdapace_obj$lambda), length(reconst_fcts))}
+  if(is.null(K) & method=="CEScores"){
+    K <- rep(length(fdapace_obj$lambda), length(reconst_fcts))
+    #K <- length(fdapace_obj$lambda)
+    }
   ## ##################################################################
   ## ##################################################################
   ## Reconstructing all functions
@@ -156,10 +157,10 @@ reconstruct <- function(Ly,
       positiveInd   <- e_list[['values']] >= 0
       eval_vec      <- e_list[['values']][positiveInd]
       evec_mat      <- e_list[['vectors']][,positiveInd, drop=FALSE]
-      if(K>1){
-        cov_est_refit_mat <- evec_mat[,1:K,drop=FALSE] %*% diag(eval_vec[1:K]) %*% t(evec_mat[,1:K,drop=FALSE])
+      if(K[i]>1){
+        cov_est_refit_mat <- evec_mat[,1:K[i],drop=FALSE] %*% diag(eval_vec[1:K[i]]) %*% t(evec_mat[,1:K[i],drop=FALSE])
       }
-      if(K==1){
+      if(K[i]==1){
         cov_est_refit_mat <- evec_mat[, 1,drop=FALSE]  %*% t(evec_mat[,1,drop=FALSE]) * eval_vec[1]
       }
       ##
@@ -167,7 +168,7 @@ reconstruct <- function(Ly,
                           workGrid    = workGrid, 
                           Y_cent_sm_i = c(stats::na.omit(Y_cent_mat[,reconst_fcts[i]])), 
                           U_sm_i      = c(stats::na.omit(U_mat[,reconst_fcts[i]])), 
-                          K           = K, 
+                          K           = K[i], 
                           pre_smooth  = ifelse(method=="PS_TRUE", TRUE, FALSE),
                           messages    = messages)
     }
@@ -175,9 +176,11 @@ reconstruct <- function(Ly,
     if(method=="CEScores"){
       tmp  <- reconst_use_CEScores_fun(Y_cent_mat  = Y_cent_mat,
                                        U_mat       = U_mat,
+                                       BwMu        = BwMu,
+                                       BwCov       = BwCov,
                                        reconst_fct = reconst_fcts[i],
                                        fdapace_obj = fdapace_obj,
-                                       K           = K[1], 
+                                       K           = K[i], 
                                        pre_smooth  = FALSE,
                                        messages    = messages)
     }

@@ -8,6 +8,8 @@
 #' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). 
 #'                     If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}).
 #'                     If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
+#' @param BwMu         Bandwidth for estimating the mean function (default: 5% of the support)
+#' @param BwCov        Bandwidth for estimating the cov function (default: 10% of the support)                   
 #' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
 #' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
 #' @param messages     Printing messages? (default: messages=FALSE)
@@ -49,6 +51,8 @@ reconstruct <- function(Ly,
                         K            = NULL,
                         K_max        = 4,
                         method       = c("PS_TRUE", "PS_FALSE", "CEScores")[3],
+                        BwMu         = NULL,
+                        BwCov        = NULL,
                         reconst_fcts = NULL,
                         nRegGrid     = 51,
                         messages     = FALSE)
@@ -58,6 +62,12 @@ reconstruct <- function(Ly,
   if(is.null(reconst_fcts)){
     reconst_fcts <- 1:n
   }
+  if(is.null(BwMu)){ 
+    h.mu  <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.05
+  }
+  if(is.null(BwCov)){ 
+    h.cov <- (max(c(unlist(Lu))) - min(c(unlist(Lu)))) * 0.10
+  }
   ##
   ## Estimate Mean and Covariance 
   fdapace_obj <- fdapace::FPCA(Ly    = Ly, 
@@ -66,8 +76,8 @@ reconstruct <- function(Ly,
                                  "dataType"       = "Sparse", 
                                  "kernel"         = "gauss",
                                  "methodMuCovEst" = "smooth",
-                                 "methodBwCov"    = 'GCV',
-                                 "methodBwMu"     = 'GCV',
+                                 "userBwMu"       = BwMu,
+                                 "userBwCov"      = BwCov,
                                  "nRegGrid"       = nRegGrid
                                  ))
   ## Regular grid
@@ -279,11 +289,13 @@ reconst_fun <- function(
 reconst_use_CEScores_fun <- function(
   Y_cent_mat,
   U_mat, 
+  BwMu,
+  BwCov,
   reconst_fct,
   fdapace_obj,
   K,
   pre_smooth = FALSE,
-  messages = FALSE  
+  messages   = FALSE  
 ){
   ##
   ## Regular grid
@@ -317,8 +329,8 @@ reconst_use_CEScores_fun <- function(
                                     "dataType"       = "Sparse", 
                                     "kernel"         = "gauss",
                                     "methodMuCovEst" = "smooth",
-                                    "methodBwCov"    = 'GCV',
-                                    "methodBwMu"     = 'GCV'#,
+                                    "userBwMu"       = BwMu,
+                                    "userBwCov"      = BwCov
                                     #"userCov"=list("t"=grid_sm_compl_vec, "cov"=cov_sm_compl_mat),
                                     #"userMu" =list("t"=grid_sm_compl_vec, "mu" =rep(0,length(grid_sm_compl_vec))),
                                     # "methodSelectK" = K

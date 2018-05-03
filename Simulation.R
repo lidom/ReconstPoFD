@@ -107,6 +107,15 @@ for(DGP in c('DGP1','DGP4','DGP5')){
         Y_list     <- c(Y_target_list,    SimDat[['Y_list']])
         U_list     <- c(U_target_list,    SimDat[['U_list']])
         ##
+        if(n==50 & m<75){
+          h.mu  <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.05
+          h.cov <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.10
+        }
+        if(n==100 | m==75){
+          h.mu  <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.05/2
+          h.cov <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.10/2
+        }
+        ##
         ## Reconstruction Operator 'without Pre-Smoothing'
         result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                     Lu           = U_list,
@@ -138,6 +147,8 @@ for(DGP in c('DGP1','DGP4','DGP5')){
                                                       K            = NULL,
                                                       K_max        = 5,
                                                       method       = "CEScores",
+                                                      BwMu         = h.mu,
+                                                      BwCov        = h.cov,
                                                       reconst_fcts = target_fcts, 
                                                       nRegGrid     = nRegGrid)
           Y_CEScores_mat <- matrix(unlist(result_CEScores[['Y_reconst_list']]), nrow = nRegGrid, ncol = n_target_fcts) 
@@ -152,8 +163,8 @@ for(DGP in c('DGP1','DGP4','DGP5')){
                                          "kernel"         = "gauss",
                                          "methodMuCovEst" = "smooth",
                                          "error"          = TRUE,#ifelse(any(DGP==c('DGP1','DGP2')),TRUE,FALSE),
-                                         "methodBwCov"    = 'GCV',
-                                         "methodBwMu"     = 'GCV',
+                                         "userBwMu"       = h.mu,
+                                         "userBwCov"      = h.cov,
                                          "nRegGrid"       = nRegGrid
                                        ))
           Y_PACE_mat <- t(fitted(result_PACE))[,target_fcts]

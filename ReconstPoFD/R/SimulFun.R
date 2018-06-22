@@ -39,7 +39,7 @@ simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3',
 simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
-  mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a)) ))}
+  mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
   eps_var  <- .025
   n_basis  <-  50
   ##
@@ -147,8 +147,7 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
       xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
     }
     if(DGP=='DGP4'){
-      # mean_fun <- function(u){return(rep(1,length(u)))}
-      mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a)) ))}
+      mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a))) )}
       ##
       xi1   <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
       xi2   <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
@@ -245,9 +244,9 @@ simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_o
   ##
   for(i in 1:n){
     if(DGP=='DGP5'){
-      mean_fun <- function(u){return( 10*((u-a)/(b-a))^2  )}
+      mean_fun <- function(u){return( 10 - 5*((u-a)/(b-a) - 0.5)^3  )}
       ##
-      rand_vec <- stats::rnorm(n = 3, sd=3)
+      rand_vec <- stats::rnorm(n = 3, sd=1)
     }
     ##
     loc_vec <- seq(a, b, len=length(rand_vec))

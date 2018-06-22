@@ -5,7 +5,7 @@
 \title{Simulate Data}
 \usage{
 simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
-  "DGP3", "DGP4", "DGP5")[1], nRegGrid = 51, determ_obs_interv = NULL)
+  "DGP3")[1], nRegGrid = 51, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -26,8 +26,7 @@ simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
 This function allows to simulate partially observed functional data.
 }
 \examples{
- 
-DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[3]
+DGP=c('DGP1','DGP2','DGP3')[1]
 SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 Y_mat         <- SimDat[['Y_mat']]
 U_mat         <- SimDat[['U_mat']]
@@ -36,11 +35,10 @@ U_true_mat    <- SimDat[['U_true_mat']]
 mean_true_vec <- SimDat[['mean_true_vec']]
 ##
 par(mfrow=c(2,1))
-matplot(x=U_mat[,1:5],      y=Y_mat[,1:5], col=gray(.5), type="l", 
-main=ifelse(any(DGP==c("DGP1","DGP2")), "Missings", "Missings"))
-lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
-matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-main=ifelse(any(DGP==c("DGP1","DGP2")), "No Missings & No Noise", "No Missings"))
+matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings")
+lines(  x=U_true_mat[,1], y=mean_true_vec, col="red")
+matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l",
+main=ifelse(DGP=="DGP1", "No Missings & No Noise", "No Missings"))
 lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 par(mfrow=c(1,1))
 }

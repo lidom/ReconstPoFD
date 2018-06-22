@@ -1,9 +1,13 @@
+rm(list = ls())
+
 ## R-packages 
 library("devtools")
+# install necessary packages:
 # install_github("lidom/ReconstPoFD/ReconstPoFD")
 # install.packages("doParallel", "fdapace")
+
 library("ReconstPoFD")  # contains the function 'reconstuct()'
-#library("doParallel")   # parallel-looping
+library("doParallel")   # parallel-looping
 
 ## Location to store the simulation results:
 setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/Simulation_Submission_2")
@@ -33,8 +37,8 @@ determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 ## Parallel loop might not work for windows!
 ## => use %do% instead of %dopar% (below) 
 ## for a non-parallel loop"
-#registerDoParallel(cores=4)
-#getDoParWorkers()
+registerDoParallel(cores=4)
+getDoParWorkers()
 ## #######################################
 
 
@@ -92,8 +96,8 @@ for(DGP in c('DGP1','DGP2','DGP3')[1]){
       ## #######################################################################
       ## Start 'foreach'-loop use "%do%" for a non-parallel loop
       ## #######################################################################
-      ## sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
-      for(repet in 1:B){
+      sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
+      #for(repet in 1:B){
         ##
         if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid)}
         if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid)}
@@ -119,7 +123,7 @@ for(DGP in c('DGP1','DGP2','DGP3')[1]){
         result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                     Lu           = U_list,
                                                     K            = NULL,
-                                                    K_max        = 3,#4
+                                                    #K_max        = 3,#4
                                                     method       = "PS_FALSE",
                                                     reconst_fcts = target_fcts, 
                                                     nRegGrid     = nRegGrid)
@@ -131,7 +135,7 @@ for(DGP in c('DGP1','DGP2','DGP3')[1]){
         result_PS_TRUE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                    Lu           = U_list,
                                                    K            = NULL,
-                                                   K_max        = 3,#4
+                                                   #K_max        = 3,#4
                                                    method       = "PS_TRUE",
                                                    reconst_fcts = target_fcts,
                                                    nRegGrid     = nRegGrid)
@@ -140,11 +144,11 @@ for(DGP in c('DGP1','DGP2','DGP3')[1]){
         K_PS_TRUE_MC_vec[repet]  <- result_PS_TRUE[['K']]
         ## 
         ## Reconstruction Operator 'without Pre-Smoothing'
-        if(any(DGP==c('DGP1','DGP2'))){
+        if(DGP=='DGP1'){
           result_CEScores <- ReconstPoFD::reconstruct(Ly           = Y_list, 
                                                       Lu           = U_list,
                                                       K            = NULL,
-                                                      K_max        = 3,#4
+                                                      #K_max        = 3,#4
                                                       method       = "CEScores",
                                                       BwMu         = h.mu,
                                                       BwCov        = h.cov,

@@ -9,8 +9,8 @@
 #' @param nRegGrid          Number of grid-points used for the equidistant 'workGrid'.
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
-#' @examples  
-#' DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[3]
+#' @examples
+#' DGP=c('DGP1','DGP2','DGP3')[1]
 #' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 #' Y_mat         <- SimDat[['Y_mat']]
 #' U_mat         <- SimDat[['U_mat']]
@@ -19,24 +19,22 @@
 #' mean_true_vec <- SimDat[['mean_true_vec']]
 #' ##
 #' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5],      y=Y_mat[,1:5], col=gray(.5), type="l", 
-#' main=ifelse(any(DGP==c("DGP1","DGP2")), "Missings", "Missings"))
-#' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
-#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l", 
-#' main=ifelse(any(DGP==c("DGP1","DGP2")), "No Missings & No Noise", "No Missings"))
+#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings")
+#' lines(  x=U_true_mat[,1], y=mean_true_vec, col="red")
+#' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l",
+#' main=ifelse(DGP=="DGP1", "No Missings & No Noise", "No Missings"))
 #' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3','DGP4','DGP5')[1], nRegGrid = 51, determ_obs_interv = NULL){
-  if(DGP=="DGP1"){SimDat <- simuldataDGP_1_2(n=n,m=m,a=a,b=b,DGP='DGP1',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP2"){SimDat <- simuldataDGP_1_2(n=n,m=m,a=a,b=b,DGP='DGP2',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP3"){SimDat <- simuldataKraus(  n=n,    a=a,b=b,DGP='DGP3',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP4"){SimDat <- simuldataKraus(  n=n,    a=a,b=b,DGP='DGP4',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP5"){SimDat <- simuldataWBF(    n=n,    a=a,b=b,DGP='DGP5',nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3')[1], nRegGrid = 51, determ_obs_interv = NULL){
+  if(DGP=="DGP1"){SimDat <- simuldataNoise(n=n,m=m,a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP2"){SimDat <- simuldataKraus(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP3"){SimDat <- simuldataWBF(  n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
   return(SimDat)
 }
 
 ##-------------------------------------------------------------------------------------
-simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
+#simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
+simuldataNoise <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
@@ -76,16 +74,15 @@ simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')
   Y_mat      <- matrix(NA, m, n)
   k_vec      <- 1:n_basis
   for(i in 1:n){
-    if(DGP=="DGP1"){
+#    if(DGP=="DGP1"){
       xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
       xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
-      #xi1 <- sqrt(30-(30/(n_basis + 1))*(k_vec - 1)) * stats::rnorm(n=n_basis)
-      #xi2 <- sqrt(30-(30/(n_basis + 1))*(k_vec))     * stats::rnorm(n=n_basis)
-    }# plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
-    if(DGP=="DGP2"){
-      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
-      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
-    }
+#    }
+    # plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
+#    if(DGP=="DGP2"){
+#      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
+#      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
+#    }
     ##
     Y_true_mat[,i] <- c(c(rowMeans(
       sapply(k_vec, function(k){
@@ -118,7 +115,8 @@ simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')
 }
 
 ##-------------------------------------------------------------------------------------
-simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
+# simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
+simuldataKraus <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
   ## Number of grid points in [a,b]
@@ -140,21 +138,18 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
   B_vec         <- rep(NA, n)
   ##
   for(i in 1:n){
-    if(DGP=='DGP3'){
-      mean_fun <- function(u){return(rep(1,length(u)))}
-      ##
-      xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
-      xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
-    }
-    if(DGP=='DGP4'){
+#    if(DGP=='DGP3'){
+#      mean_fun <- function(u){return(rep(1,length(u)))}
+#      ##
+#      xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
+#      xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
+#    }
+#    if(DGP=='DGP4'){
       mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a))) )}
       ##
       xi1   <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
       xi2   <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
-      # xi1   <- 25*sqrt(25^(-(k_vec+1)/5)) * stats::rnorm(n = length(k_vec))
-      # xi2   <- 25*sqrt(25^(-(k_vec  )/5)) * stats::rnorm(n = length(k_vec))
-    }# matplot(y=cbind(9*sqrt(3^(-2*(k_vec+1))), 25*sqrt(25^(-(k_vec+1)/5))),x=k_vec)
-    # matplot(y=cbind(9*sqrt(3^(-2*(k_vec+1)))),x=k_vec)
+#    } 
     ##
     U_vec  <- seq(a, b, len=p)
     ##
@@ -223,7 +218,8 @@ simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 
 }
 
 ##-------------------------------------------------------------------------------------
-simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
+# simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
+simuldataWBF <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)  
 {
   ##
   ## Number of grid points in [a,b]
@@ -243,11 +239,11 @@ simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_o
   B_vec         <- rep(NA, n)
   ##
   for(i in 1:n){
-    if(DGP=='DGP5'){
+#    if(DGP=='DGP5'){
       mean_fun <- function(u){return( 10 - 5*((u-a)/(b-a) - 0.5)^3  )}
       ##
       rand_vec <- stats::rnorm(n = 3, sd=1)
-    }
+#    }
     ##
     loc_vec <- seq(a, b, len=length(rand_vec))
     U_vec   <- seq(a, b, len=p)

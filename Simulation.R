@@ -41,9 +41,11 @@ determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 (Start.Time <- Sys.time())
 
 
-for(DGP in c('DGP1','DGP4','DGP5')[1]){
+# for(DGP in c('DGP1','DGP4','DGP5')[1]){
+for(DGP in c('DGP1','DGP2','DGP3')[1]){
   for(n in c(50, 100)){
-    if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15, 50)}else{m_seq <- NA}
+    # if(any(DGP==c('DGP1','DGP2'))){m_seq <- c(15, 50)}else{m_seq <- NA}
+    if(DGP=='DGP1'){m_seq <- c(15, 50)}else{m_seq <- NA}
     for(m in m_seq){
       
       ## a <- 0; b <- 1; DGP <- 'DGP5'; n <- 50; m <- 50; nRegGrid <- 61; B <- 30
@@ -52,13 +54,11 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
       cat(DGP,"n=",n,"m=",m,"\n")
       ## #######################################################################
       ## #######################################################################
-      ## Preselecting partially observed target functions for the reconstructions
+      ## Preselecting partially observed *target* functions to be reconstructed
       ## #######################################################################
-      if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
-      if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
-      if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
-      if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
-      if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, DGP='DGP5', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
+      if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       ## 
       target_fcts       <- 1:n_target_fcts
       ##
@@ -95,11 +95,9 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
       ## sim.results <- foreach(repet=1:B, .combine=cbind)  %dopar% { 
       for(repet in 1:B){
         ##
-        if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid)}
-        if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid)}
-        if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, DGP='DGP3', nRegGrid = nRegGrid)}
-        if(DGP=='DGP4'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, DGP='DGP4', nRegGrid = nRegGrid)}
-        if(DGP=='DGP5'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, DGP='DGP5', nRegGrid = nRegGrid)}
+        if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid)}
+        if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid)}
+        if(DGP=='DGP3'){SimDat <- ReconstPoFD::simuldata(n = n-n_target_fcts, m = m, a = a, b = b, nRegGrid = nRegGrid)}
         ##
         Y_mat      <- cbind(Y_target_mat, SimDat[['Y_mat']])
         U_mat      <- cbind(U_target_mat, SimDat[['U_mat']])
@@ -174,7 +172,7 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
           K_PACE_MC_vec[repet]  <- length(result_PACE$lambda)
         #}
         ##
-        if(any(DGP==c('DGP3','DGP4','DGP5'))){
+        if(any(DGP==c('DGP2','DGP3'))){
           ## Reconstruction Operator of Kraus (2015, JRSSB)
           result_Kraus            <- ReconstPoFD::reconstructKraus(X_mat = Y_mat, reconst_fcts = target_fcts)
           Y_Kraus_mat             <- result_Kraus[['X_reconst_mat']]
@@ -213,7 +211,7 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
         plot(Y_PS_TRUE_MC_mat[,i], type="b", ylim=range(Y_PS_TRUE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PS_TRUE")
         lines(Y_target_true_mat[,i]); points(y=Y_PS_TRUE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         ##
-        if(any(DGP==c('DGP1','DGP2'))){
+        if(DGP=='DGP1'){
         plot(Y_CEScores_MC_mat[,i], type="b", ylim=range(Y_CEScores_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="CEScores")
         lines(Y_target_true_mat[,i]); points(y=Y_CEScores_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         }
@@ -221,7 +219,7 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
         plot(Y_PACE_MC_mat[,i], type="b", ylim=range(Y_PACE_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="PACE")
         lines(Y_target_true_mat[,i]); points(y=Y_PACE_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         ##
-        if(any(DGP==c('DGP3','DGP4','DGP5'))){
+        if(any(DGP==c('DGP2','DGP3'))){
         plot(Y_Kraus_MC_mat[,i], type="b", ylim=range(Y_Kraus_MC_mat[,i],Y_target_true_mat[slct_M,i]),main="Kraus")
         lines(Y_target_true_mat[,i]); points(y=Y_Kraus_MC_mat[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
         }
@@ -253,10 +251,10 @@ for(DGP in c('DGP1','DGP4','DGP5')[1]){
       mtext(text = "Variance", side = 3, line = 1)
       par(mfrow=c(1,1))      
       ## Save results:
-      if(any(DGP==c('DGP1','DGP2'))){
+      if(DGP=='DGP1'){
         save(BiasSq, Var, file = paste0(DGP,"_n",n,"_m",m,"_simResults.RData"))
       }
-      if(any(DGP==c('DGP3','DGP4','DGP5'))){
+      if(any(DGP==c('DGP2','DGP3'))){
         save(BiasSq, Var, file = paste0(DGP,"_n",n,"_simResults.RData"))
       }
     }

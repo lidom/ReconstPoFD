@@ -26,15 +26,15 @@
 #' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
 simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3')[1], nRegGrid = 51, determ_obs_interv = NULL){
-  if(DGP=="DGP1"){SimDat <- simuldataNoise(n=n,m=m,a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP2"){SimDat <- simuldataKraus(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP3"){SimDat <- simuldataWBF(  n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP1"){SimDat <- simuldata_1(n=n,m=m,a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP2"){SimDat <- simuldata_2(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP3"){SimDat <- simuldata_3(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
   return(SimDat)
 }
 
 ##-------------------------------------------------------------------------------------
 #simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
-simuldataNoise <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs_interv = NULL){
+simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
@@ -116,7 +116,7 @@ simuldataNoise <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_
 
 ##-------------------------------------------------------------------------------------
 # simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
-simuldataKraus <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)
+simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
   ## Number of grid points in [a,b]
@@ -219,7 +219,7 @@ simuldataKraus <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = N
 
 ##-------------------------------------------------------------------------------------
 # simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
-simuldataWBF <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)  
+simuldata_3 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)  
 {
   ##
   ## Number of grid points in [a,b]

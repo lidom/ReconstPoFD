@@ -146,17 +146,20 @@ for(DGP in c('DGP1','DGP2','DGP3')[-1]){
         }
         ##
         ## PACE of Yao, Müller, Wang (2005, JASA) if error == true
-        result_PACE <- fdapace::FPCA(Ly    = Y_list, 
-                                     Lt    = U_list, 
-                                     optns = list(
-                                       "dataType"       = "Sparse", 
-                                       "kernel"         = "gauss",
-                                       "methodMuCovEst" = "smooth",
-                                       "error"          = ifelse(any(DGP==c('DGP1','DGP2')),TRUE,FALSE),
-                                       "userBwMu"       = h.mu,
-                                       "userBwCov"      = h.cov,
-                                       "nRegGrid"       = nRegGrid
-                                     ))
+        if(DGP=='DGP1'){
+          opt_list <- list(
+            "dataType"       = "Sparse", "kernel"         = "gauss",
+            "methodMuCovEst" = "smooth", "error"          = TRUE,
+            "userBwMu"       = h.mu,     "userBwCov"      = h.cov,
+            "nRegGrid"       = nRegGrid)
+        }else{
+          opt_list <- list(
+            "dataType"       = "Sparse", "kernel"         = "gauss",
+            "methodMuCovEst" = "smooth", "error"          = FALSE,
+            "nRegGrid"       = nRegGrid)
+        }
+        result_PACE <- fdapace::FPCA(Ly = Y_list, Lt = U_list, optns = opt_list)
+        ##
         Y_PACE_mat <- t(fitted(result_PACE))[,target_fcts]
         Y_PACE_MC_mat[,((repet-1)*n_target_fcts+1):(repet*n_target_fcts)] <- Y_PACE_mat
         K_PACE_MC_vec[repet]  <- length(result_PACE$lambda)

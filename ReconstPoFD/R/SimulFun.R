@@ -75,8 +75,10 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
   k_vec      <- 1:n_basis
   for(i in 1:n){
 #    if(DGP=="DGP1"){
-      xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
-      xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
+      # xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
+      # xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
+      xi1 <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
+      xi2 <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
 #    }
     # plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
 #    if(DGP=="DGP2"){
@@ -242,7 +244,7 @@ simuldata_3 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
 #    if(DGP=='DGP5'){
       mean_fun <- function(u){return( 10 - 5*((u-a)/(b-a) - 0.5)^3  )}
       ##
-      rand_vec <- stats::rnorm(n = 3, sd=1)
+      rand_vec <- stats::rnorm(n = 3, sd=2)
 #    }
     ##
     loc_vec <- seq(a, b, len=length(rand_vec))

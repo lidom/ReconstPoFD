@@ -46,7 +46,7 @@ reconstKneipLiebl_fun <- function(cov, argvals, argvalsO, scoresO, efunctionsO, 
 
 
 my.fpca <- function(Ly    = Ly, 
-                    Lt    = Lu, reconst_fcts) {
+                    Lu    = Lu, reconst_fcts) {
   
   n  <- length(Ly)
   m  <- length(Ly[[1]])

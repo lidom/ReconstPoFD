@@ -4,7 +4,7 @@
 \alias{reconstruct}
 \title{Reconstruct partially observed functions}
 \usage{
-reconstruct(Ly, Lu, K = NULL, K_max = 3, method = c("PS_TRUE", "PS_FALSE",
+reconstruct(Ly, Lu, K = NULL, K_max = 4, method = c("PS_TRUE", "PS_FALSE",
   "CEScores")[3], BwMu = NULL, BwCov = NULL, reconst_fcts = NULL,
   nRegGrid = 51, messages = FALSE)
 }

@@ -10,7 +10,7 @@
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples
-#' DGP=c('DGP1','DGP2','DGP3')[1]
+#' DGP=c('DGP1','DGP2','DGP3')[2]
 #' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 #' Y_mat         <- SimDat[['Y_mat']]
 #' U_mat         <- SimDat[['U_mat']]
@@ -134,7 +134,7 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
   Y_true_list <- vector("list", n)
   U_true_list <- vector("list", n)
   ##
-  k_vec <- 1:100
+  k_vec <- 1:50
   ##
   A_vec         <- rep(NA, n)
   B_vec         <- rep(NA, n)
@@ -147,25 +147,31 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
 #      xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
 #    }
 #    if(DGP=='DGP4'){
-      mean_fun <- function(u){return( ((u-a)/(b-a))^2 + cos(3*pi*((u-a)/(b-a))) )}
-      ##
-      xi1   <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
-      xi2   <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
+    mean_fun <- function(u){return( ((u-a)/(b-a))^2 + sin(2*pi*((u-a)/(b-a))) )}
+    ##
+    xi1   <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
+    xi2   <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
+      # mean_fun <- function(u){return( ((u-a)/(b-a))^2 + 2*cos(2*pi*((u-a)/(b-a))) )}
+      # ##
+      # xi1   <- 50*exp(-((k_vec-1)^3)) * stats::rnorm(n = length(k_vec))
+      # xi2   <- 50*exp(-((k_vec  )^3)) * stats::rnorm(n = length(k_vec))
 #    } 
     ##
     U_vec  <- seq(a, b, len=p)
     ##
     Y_vec <- c(rowMeans(
       sapply(k_vec, function(k){
-        xi1[k] * sqrt(2) * cos(2*pi*k*(U_vec-a)/(b-a)) +
-          xi2[k] * sqrt(2) * sin(2*pi*k*(U_vec-a)/(b-a)) 
+        xi1[k] * cos(2*pi*k*(U_vec-a)/(b-a)) +
+        xi2[k] * sin(2*pi*k*(U_vec-a)/(b-a)) 
       }))) + mean_fun(U_vec)
     ##
     if(is.null(determ_obs_interv)){
       ## Random observed interval
       if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
-        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
+        # A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+        # B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
+        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .7))
+        B_vec[i]  <- A_vec[i] + 1-(a+ (b-a) * .7) 
       }else{
         A_vec[i] = a
         B_vec[i] = b

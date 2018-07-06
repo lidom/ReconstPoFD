@@ -47,7 +47,7 @@
 reconstruct <- function(Ly,
                         Lu,
                         K            = NULL,
-                        K_max        = 3,
+                        K_max        = 4,
                         method       = c("PS_TRUE", "PS_FALSE", "CEScores")[3],
                         BwMu         = NULL,
                         BwCov        = NULL,
@@ -544,7 +544,7 @@ K_aic_fun <- function(Ly_cent,
                       Lu,
                       cov_la_mat,
                       workGrid,
-                      K_max      = 3,
+                      K_max      = 4,
                       pre_smooth = FALSE,
                       messages   = FALSE)
 {

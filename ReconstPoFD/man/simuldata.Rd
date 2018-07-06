@@ -26,7 +26,7 @@ simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
 This function allows to simulate partially observed functional data.
 }
 \examples{
-DGP=c('DGP1','DGP2','DGP3')[1]
+DGP=c('DGP1','DGP2','DGP3')[2]
 SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 Y_mat         <- SimDat[['Y_mat']]
 U_mat         <- SimDat[['U_mat']]

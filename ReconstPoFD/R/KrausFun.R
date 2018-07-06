@@ -119,11 +119,15 @@ reconstKraus_fun <- function(cov_mat, X_cent_vec, alpha=1e-4){
   ##
   X_cent_reconst_vec             <- X_cent_vec
   X_cent_reconst_vec[M_bool_vec] <- X_M_fit_cent_vec
-  ##
-  df <- sum(diag(covOO_a_mat_inv %*% covOO_mat))
+  ## compute df
+  #df <- sum(diag(covOO_a_mat_inv %*% covOO_mat))
+  lam00 <- base::eigen(covOO_mat)$values
+  lam00 <- lam00[lam00>0]
+  df    <- sum(lam00/(lam00+alpha))
   ##
   return(list("X_cent_reconst_vec" = X_cent_reconst_vec,
-              "df"                 = df))
+              "df"                 = df,
+              "alpha"              = alpha))
 }
 
 

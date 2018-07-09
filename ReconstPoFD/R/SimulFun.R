@@ -149,8 +149,8 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
 #    if(DGP=='DGP4'){
     mean_fun <- function(u){return( ((u-a)/(b-a))^2 + sin(2*pi*((u-a)/(b-a))) )}
     ##
-    xi1   <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n = length(k_vec))
-    xi2   <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n = length(k_vec))
+    xi1   <- 50*sqrt(exp(-((k_vec-1)^2))) * stats::rnorm(n = length(k_vec))
+    xi2   <- 50*sqrt(exp(-((k_vec  )^2))) * stats::rnorm(n = length(k_vec))
       # mean_fun <- function(u){return( ((u-a)/(b-a))^2 + 2*cos(2*pi*((u-a)/(b-a))) )}
       # ##
       # xi1   <- 50*exp(-((k_vec-1)^3)) * stats::rnorm(n = length(k_vec))
@@ -161,8 +161,8 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
     ##
     Y_vec <- c(rowMeans(
       sapply(k_vec, function(k){
-        xi1[k] * cos(2*pi*k*(U_vec-a)/(b-a)) +
-        xi2[k] * sin(2*pi*k*(U_vec-a)/(b-a)) 
+        xi1[k] * cos(1*pi*k*(U_vec-a)/(b-a)) +
+        xi2[k] * sin(1*pi*k*(U_vec-a)/(b-a)) 
       }))) + mean_fun(U_vec)
     ##
     if(is.null(determ_obs_interv)){

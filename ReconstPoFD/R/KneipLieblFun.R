@@ -195,7 +195,6 @@ reconstructKneipLiebl <- function(Ly,
                                     method   = 3)
       }else{K_vec[i] <- K}
       ##
-      HERE: ERROR CHECKING
       smooth.fit        <- stats::smooth.spline(y=c(na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
       fragmO_presmooth  <- stats::predict(smooth.fit, fpca_obj$argvalsO[[i]])$y
       ##

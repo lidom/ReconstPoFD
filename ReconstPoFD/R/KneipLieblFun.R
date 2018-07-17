@@ -45,7 +45,8 @@ reconstructKneipLiebl <- function(Ly,
                                                    'Error>=0_AlignNO',
                                                    'Error>0_AlignYES_CEscores',
                                                    'Error>0_AlignNO_CEscores'),
-                                  K            = NULL, 
+                                  K            = NULL,
+                                  nRegGrid     = NULL,
                                   maxbins      = NULL){
   ##
   method <- switch(method, 
@@ -243,8 +244,18 @@ reconstructKneipLiebl <- function(Ly,
                                           fragmO      = NULL, 
                                           K           = K_vec[i])
       ##
-      Y_reconst_list[[i]]   <- result_tmp[['y_reconst']]
-      U_reconst_list[[i]]   <- result_tmp[['x_reconst']]
+      Y_reconst_list[[i]]  <- result_tmp[['y_reconst']]
+      U_reconst_list[[i]]  <- result_tmp[['x_reconst']]
+    }
+  }
+  ##
+  if(!is.null(nRegGrid)){
+    ## Evaluate the reconstruced functions at a regular gird of length nRegGrid
+    xout <- seq(from = min(fpca_obj$argvals), to = max(fpca_obj$argvals), len=nRegGrid)
+    for(i in 1:length(reconst_fcts)){ # i <- 1
+      Reconstr_on_RegGrid  <- spline(y = Y_reconst_list[[i]], x = U_reconst_list[[i]], xout = xout)
+      Y_reconst_list[[i]]  <- Reconstr_on_RegGrid$y
+      U_reconst_list[[i]]  <- Reconstr_on_RegGrid$x
     }
   }
   ##

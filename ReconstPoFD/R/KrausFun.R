@@ -63,9 +63,9 @@ reconstructKraus <- function(X_mat,
     X_reconst_mat[,i]  <- c(result_tmp[['X_cent_reconst_vec']] + mean_vec)
     df_vec[i]          <- result_tmp[['df']]
   }
-  return(list("X_reconst_mat"    = X_reconst_mat,
-              "alpha_median"     = stats::median(alpha_vec), 
-              "df_median"        = stats::median(df_vec)
+  return(list("X_reconst_mat" = X_reconst_mat,
+              "alpha"         = alpha_vec, 
+              "df"            = df_vec
               ))
 }
 

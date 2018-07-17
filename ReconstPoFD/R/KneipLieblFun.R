@@ -85,7 +85,7 @@ reconstructKneipLiebl <- function(Ly,
                                     method   = 1)
       }else{K_vec[i] <- K}
       ##
-      fragmO     <- c(na.omit(c(fpca_obj$Y[i,])))
+      fragmO     <- c(stats::na.omit(c(fpca_obj$Y[i,])))
       ##
       result_tmp <- reconstKneipLiebl_fun(mu          = fpca_obj$mu, 
                                           cov         = fpca_obj$cov, 
@@ -123,7 +123,7 @@ reconstructKneipLiebl <- function(Ly,
                                     method   = 2)
       }else{K_vec[i] <- K}
       ##
-      smooth.fit        <- stats::smooth.spline(y=c(na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
+      smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
       fragmO_presmooth  <- stats::predict(smooth.fit, fpca_obj$argvalsO[[i]])$y
       ##
       result_tmp <- reconstKneipLiebl_fun(mu          = fpca_obj$mu, 
@@ -196,7 +196,7 @@ reconstructKneipLiebl <- function(Ly,
                                     method   = 4)
       }else{K_vec[i] <- K}
       ##
-      smooth.fit        <- stats::smooth.spline(y=c(na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
+      smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
       fragmO_presmooth  <- stats::predict(smooth.fit, fpca_obj$argvalsO[[i]])$y
       ##
       result_tmp <- reconstKneipLiebl_fun(mu          = fpca_obj$mu, 
@@ -315,7 +315,7 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
   ##
   for(i in seq_len(n_compl)){# i <- 1
     Y.cent            <- c(Y.pred[i,,drop=FALSE] - matrix(mu, 1, ncol(Y)))
-    obs_locO          <- match(names(c(na.omit((Y.pred[i,])))), as.character(argvalsO))
+    obs_locO          <- match(names(c(stats::na.omit((Y.pred[i,])))), as.character(argvalsO))
     ## 
     if(any(method==c(1,2,3))){
       ## Classical scores (via intergration)
@@ -326,7 +326,7 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
     ##
     if(any(method==c(3,4))){
       ## Pre-smoothing of framO
-      smooth.fit        <- stats::smooth.spline(y=c(na.omit((Y.pred[i,]))), x=argvalsO[obs_locO])
+      smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit((Y.pred[i,]))), x=argvalsO[obs_locO])
       fragmO_presmooth  <- stats::predict(smooth.fit, argvalsO)$y
     }
     ##
@@ -432,7 +432,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
   # argvals of observed fragments to be reconstructed
   argvalsO <- vector("list", length = length(reconst_fcts))
   for(i in seq_len(length(reconst_fcts))){
-    minmax        <- range(as.numeric(names(c(na.omit(Y.pred[i,])))))
+    minmax        <- range(as.numeric(names(c(stats::na.omit(Y.pred[i,])))))
     argvalsO[[i]] <- argvals[argvals >= minmax[1] & argvals <= minmax[2]]
   }
   ##
@@ -519,7 +519,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     T1.max     <- max(which(argvals <= argvals[D] - 0.25 * T.len))  # right bound of narrower interval T1
     DIAG       <- (diag.G0 - diag(cov))[T1.min:T1.max]  # function values
     w2         <- quadWeights(argvals[T1.min:T1.max], method = "trapezoidal")
-    sigma2     <- max(weighted.mean(DIAG, w = w2, na.rm = TRUE), 0)
+    sigma2     <- max(stats::weighted.mean(DIAG, w = w2, na.rm = TRUE), 0)
     ##
   }
   ## computations for observed fragments
@@ -546,7 +546,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     D.inv             <- diag(1/evaluesO[[i]], nrow = npc, ncol = npc)
     Z                 <- efunctionsO[[i]]
     Y.cent            <- c(Y.pred[i,,drop=FALSE] - matrix(mu, 1, D))
-    obs_locO          <- match(names(c(na.omit((Y.pred[i,])))), as.character(argvalsO[[i]]))
+    obs_locO          <- match(names(c(stats::na.omit((Y.pred[i,])))), as.character(argvalsO[[i]]))
     obs_argvalsO[[i]] <- argvalsO[[i]][obs_locO]
     ## 
     if(CEscores){

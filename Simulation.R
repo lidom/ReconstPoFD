@@ -97,11 +97,6 @@ for(DGP in c('DGP1','DGP2','DGP3')[2]){
       Y_CEScores_MC_mat <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       Y_PACE_MC_mat     <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
       Y_Kraus_MC_mat    <- matrix(NA, nrow = nRegGrid, ncol = n_target_fcts*B)
-      K_PS_FALSE_MC_vec <- rep(NA, B)
-      K_PS_TRUE_MC_vec  <- rep(NA, B)
-      K_CEScores_MC_vec <- rep(NA, B)
-      K_PACE_MC_vec     <- rep(NA, B)
-      df_Kraus_MC_vec   <- rep(NA, B)
       ##
       ## #######################################################################
       for(repet in 1:B){ # repet <- 1
@@ -115,16 +110,6 @@ for(DGP in c('DGP1','DGP2','DGP3')[2]){
         ##
         Y_list     <- c(Y_target_list,    SimDat[['Y_list']])
         U_list     <- c(U_target_list,    SimDat[['U_list']])
-        ##
-        #if(!is.na(m_seq[1])){
-        if(n<=80){
-          h.mu  <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.05
-          h.cov <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.10
-        }
-        if(n>80){
-          h.mu  <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.05/2
-          h.cov <- (max(c(unlist(U_list))) - min(c(unlist(U_list)))) * 0.10/2
-        }#}
         ##
         ## Reconstruction Operator 'without Pre-Smoothing'
         result_PS_FALSE <- ReconstPoFD::reconstruct(Ly           = Y_list, 
@@ -173,7 +158,7 @@ for(DGP in c('DGP1','DGP2','DGP3')[2]){
             "nRegGrid"       = nRegGrid)
         }else{
           opt_list <- list(
-            "dataType"       = "Sparse", "kernel"         = "gauss",
+            "dataType"       = "Dense",  "kernel"         = "gauss",
             "methodMuCovEst" = "smooth", "error"          = FALSE,    
             "userBwMu"       = h.mu,     "userBwCov"      = h.cov,
             "nRegGrid"       = nRegGrid) 

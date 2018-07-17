@@ -1,49 +1,49 @@
-#' Reconstruct partially observed functions
-#'
-#' This function allows you to reconstruct the missing parts of a function given the observed parts.
-#' @param Ly           List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}
-#' @param Lu           List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
-#' @param K_max        Maximum K (used in the AIC-type criterion)
-#' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}). If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
-#' @param BwMu         Bandwidth for estimating the mean function (default: 0.05 of the support)
-#' @param BwCov        Bandwidth for estimating the cov function (default: 0.10 of the support)                   
-#' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
-#' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
-#' @param messages     Printing messages? (default: messages=FALSE)
+# #' Reconstruct partially observed functions
+# #'
+# #' This function allows you to reconstruct the missing parts of a function given the observed parts.
+# #' @param Ly           List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}
+# #' @param Lu           List of U-values. The ith (i=1,...,n) list-element contains \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+# #' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
+# #' @param K_max        Maximum K (used in the AIC-type criterion)
+# #' @param method       If method=PS_TRUE:  Pre-smoothing of the 'observed' part (Reconstruction operator: \eqn{L^*}{L*}). If method=PS_FALSE: FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L}). If method=CEScores: FPCA-estimation of the 'observed' part with CEScores from the fdapace package.
+# #' @param BwMu         Bandwidth for estimating the mean function (default: 0.05 of the support)
+# #' @param BwCov        Bandwidth for estimating the cov function (default: 0.10 of the support)                   
+# #' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
+# #' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
+# #' @param messages     Printing messages? (default: messages=FALSE)
 # #' @export reconstruct
-#' @examples  
-#' a <- 0; b <- 1
-#' SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
-#' ## 
-#' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
-#' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
-#' ##
-#' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE",
-#' reconst_fcts = 1:3)
-#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
-#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
-#' ##
-#' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE", 
-#' reconst_fcts = 1:3)
-#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
-#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3) 
-#' ##
-#' reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores",
-#' reconst_fcts = 1:3)
-#' Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), ncol=3) 
-#' U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), ncol=3) 
-#' ##
-#' par(mfrow=c(2,2))
-#' matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l", 
-#' main="Orig. Data", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5), 
-#' type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5), 
-#' type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
-#' matplot(x=U_reconst_mat_3, y=Y_reconst_mat_3, col=gray(.5), 
-#' type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
-#' par(mfrow=c(1,1))
+# #' @ examples
+# #' a <- 0; b <- 1
+# #' SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
+# #' ##
+# #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
+# #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
+# #' ##
+# #' reconst_result_1 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_TRUE",
+# #' reconst_fcts = 1:3)
+# #' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3)
+# #' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3)
+# #' ##
+# #' reconst_result_2 <- reconstruct(Ly = Y_list, Lu = U_list, method = "PS_FALSE",
+# #' reconst_fcts = 1:3)
+# #' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3)
+# #' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3)
+# #' ##
+# #' reconst_result_3 <- reconstruct(Ly = Y_list, Lu = U_list, method = "CEScores",
+# #' reconst_fcts = 1:3)
+# #' Y_reconst_mat_3  <- matrix(unlist(reconst_result_3[['Y_reconst_list']]), ncol=3)
+# #' U_reconst_mat_3  <- matrix(unlist(reconst_result_3[['U_reconst_list']]), ncol=3)
+# #' ##
+# #' par(mfrow=c(2,2))
+# #' matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l",
+# #' main="Orig. Data", xlim=c(a,b))
+# #' matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5),
+# #' type="l", main="PS_TRUE", ylab="", xlab="", xlim=c(a,b))
+# #' matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5),
+# #' type="l", main="PS_FALSE", ylab="", xlab="", xlim=c(a,b))
+# #' matplot(x=U_reconst_mat_3, y=Y_reconst_mat_3, col=gray(.5),
+# #' type="l", main="CEScores", ylab="", xlab="", xlim=c(a,b))
+# #' par(mfrow=c(1,1))
 reconstruct <- function(Ly,
                         Lu,
                         K            = NULL,
@@ -602,26 +602,26 @@ K_aic_fun <- function(Ly_cent,
   return(K_AIC)
 }
 
-#' Iterative Reconstruction Algoritm
-#'
-#' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
-#' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
-#' 
-#' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
-#' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
-#' @param Y_cent_sm_i Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},
-#' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
-#' @param K           Truncation parameter
-#' @param fraction    A value between 0 and 1. (See details)
-#' @param max_rep     Maximal number of iterations (default max_rep=5)
-#' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
-#' @param messages    Printing messages if the algorithm stops (default messages=FALSE)
-#' @details 
-#' Idea of the procedure: In each iteration the observed function is devided in a upper and lower fragment which are used to reconstruct further upper and lower missing parts. 
-#' 
-#' The lengths of the upper and lower fragments are determined by the argument 'fraction'. 
-#' Large values of 'fraction' lead to large (i.e., more informative) fragments which can improve the reconstructions, but will not allow to reconstruct large missing parts. 
-#' Small values of 'fraction' lead to small (i.e., less informative) fragments which can worsen the reconstructions, but will allow to reconstruct large missing parts. 
+# #' Iterative Reconstruction Algoritm
+# #'
+# #' This function iteratively applies the function reconst_fun() in order to reconstruct the missing parts of a function given the observed parts. 
+# #' The iterative procedure allows to reconstruct functions when their covariance function cannot be estimated over the total domain. However, the covariance function must be estimated over a sufficiently large part of the domain.  
+# #' 
+# #' @param cov_la_mat  Discretized covariance function over \eqn{[a,b]\times[a,b]}{[a,b]x[a,b]}
+# #' @param workGrid    Equidistant discretization grid in \eqn{[a,b]}{[a,b]}
+# #' @param Y_cent_sm_i Centered function values of the ith function: \eqn{Y_{ij}-\hat\mu(U_{ij}), j=1,\dots,m}{Y_{ij}-\hat\mu(U_{ij}), j=1,...,m},
+# #' @param U_sm_i      Discretization points of the ith function: \eqn{U_{i1},\dots,U_{im}}{U_{i1},...,U_{im}}
+# #' @param K           Truncation parameter
+# #' @param fraction    A value between 0 and 1. (See details)
+# #' @param max_rep     Maximal number of iterations (default max_rep=5)
+# #' @param pre_smooth  If pre_smooth==TRUE:  Pre-smoothing of the 'observed' part.  (Reconstruction operator: \eqn{L^*}{L*}). If pre_smooth==FALSE (default): FPCA-estimation of the 'observed' part (Reconstruction operator: \eqn{L}{L})
+# #' @param messages    Printing messages if the algorithm stops (default messages=FALSE)
+# #' @details 
+# #' Idea of the procedure: In each iteration the observed function is devided in a upper and lower fragment which are used to reconstruct further upper and lower missing parts. 
+# #' 
+# #' The lengths of the upper and lower fragments are determined by the argument 'fraction'. 
+# #' Large values of 'fraction' lead to large (i.e., more informative) fragments which can improve the reconstructions, but will not allow to reconstruct large missing parts. 
+# #' Small values of 'fraction' lead to small (i.e., less informative) fragments which can worsen the reconstructions, but will allow to reconstruct large missing parts. 
 # #' @export iter_reconst_fun
 iter_reconst_fun <- function(cov_la_mat, 
                              workGrid, 

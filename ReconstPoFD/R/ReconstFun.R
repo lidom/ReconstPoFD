@@ -11,7 +11,7 @@
 #' @param reconst_fcts A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.
 #' @param nRegGrid     Number of grid-points used for the equidistant 'workGrid'; needed for the fdapace::FPCA() function among others.
 #' @param messages     Printing messages? (default: messages=FALSE)
-#' @export reconstruct
+# #' @export reconstruct
 #' @examples  
 #' a <- 0; b <- 1
 #' SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
@@ -622,7 +622,7 @@ K_aic_fun <- function(Ly_cent,
 #' The lengths of the upper and lower fragments are determined by the argument 'fraction'. 
 #' Large values of 'fraction' lead to large (i.e., more informative) fragments which can improve the reconstructions, but will not allow to reconstruct large missing parts. 
 #' Small values of 'fraction' lead to small (i.e., less informative) fragments which can worsen the reconstructions, but will allow to reconstruct large missing parts. 
-#' @export iter_reconst_fun
+# #' @export iter_reconst_fun
 iter_reconst_fun <- function(cov_la_mat, 
                              workGrid, 
                              Y_cent_sm_i, 

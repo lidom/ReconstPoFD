@@ -364,9 +364,6 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FAL
   Y.pred        <- Y.pred[slct,,drop=FALSE]
   n_compl       <- nrow(Y.pred)
   ##
-  # if(n_compl <= 5){warning("Very few (<=5) complete functions; do not trust the GCV-result.")}
-  if(n_compl <= 1){stop("Too few complete functions.")}
-  ##
   # Numerical integration for calculation of eigenvalues (see Ramsay & Silverman, Ch.8)
   muO               <- mu[locO]
   w                 <- quadWeights(argvalsO, method = "trapezoidal")
@@ -384,6 +381,13 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FAL
   evaluesO          <- eigen(V, symmetric = TRUE, only.values = TRUE)$values[1:npc]  # use correct matrix for eigenvalue problem
   D.inv             <- diag(1/evaluesO, nrow = npc, ncol = npc)
   Z                 <- efunctionsO
+  ##
+  # if(n_compl <= 5){warning("Very few (<=5) complete functions; do not trust the GCV-result.")}
+  if(n_compl <= 1){
+    warning("Too few complete functions; we use the pve=0.9 criterium")
+    K.pve <- which(cumsum(evalues[evalues>0])/sum(evalues[evalues>0])>=.9)[1]
+    return(K.pve)
+  }
   ##
   rss_mat           <- matrix(NA, n_compl, npc)
   if(progrbar){

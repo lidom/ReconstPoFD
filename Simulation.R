@@ -6,17 +6,12 @@ library("devtools")
 
 library("ReconstPoFD")  # contains the function 'reconstuct()'
 
-
-# library("doParallel")   # parallel-looping
-# registerDoParallel(cores=6)
-# getDoParWorkers()
-
 ## Location to store the simulation results:
 setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/Simulation_Submission_2")
 
 ## #######################################
 ## Number of MC-Repetitions
-B         <-  1000
+B         <-  500
 ## #######################################
 
 ## #######################################
@@ -34,9 +29,7 @@ determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 
 (Start.Time <- Sys.time())
 
-
-
-for(DGP in c('DGP1','DGP2','DGP3')[1]){
+for(DGP in c('DGP1','DGP2','DGP3')){
   for(n in c(50, 100)){
     if(DGP=='DGP1'){m_seq <- c(15, 30)}else{m_seq <- NA}
     for(m in m_seq){
@@ -50,7 +43,7 @@ for(DGP in c('DGP1','DGP2','DGP3')[1]){
       ## Preselecting partially observed *target* functions to be reconstructed
       ## #######################################################################
       ##
-      set.seed(223109)
+      set.seed(109223)
       ##
       if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = 1, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = 1, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}

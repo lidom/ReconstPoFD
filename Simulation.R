@@ -16,7 +16,7 @@ setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/Simulation_Submission_2")
 
 ## #######################################
 ## Number of MC-Repetitions
-B         <-  5#100
+B         <-  1000
 ## #######################################
 
 ## #######################################
@@ -36,12 +36,12 @@ determ_obs_interv <- c((a+(b-a)*0.35), (b-(b-a)*0.35))
 
 
 
-for(DGP in c('DGP1','DGP2','DGP3')){
-  for(n in c(50)){
-    if(DGP=='DGP1'){m_seq <- c(15)}else{m_seq <- NA}
+for(DGP in c('DGP1','DGP2','DGP3')[1]){
+  for(n in c(50, 100)){
+    if(DGP=='DGP1'){m_seq <- c(15, 30)}else{m_seq <- NA}
     for(m in m_seq){
       
-      ## DGP <- 'DGP2'; n <- 75; m <- 40; B <- 100
+      ## DGP <- 'DGP3'; n <- 50; m <- 40; B <- 3
       
       ## #######################################################################
       cat(DGP,"n=",n,"m=",m,"\n")
@@ -133,10 +133,10 @@ for(DGP in c('DGP1','DGP2','DGP3')){
           ## 
           ## PACE of Yao, Mueller, Wang (2005, JASA)
           result_PACE           <- fdapace::FPCA(Ly = Y_list, Lt = U_list, optns = list(
-            "dataType"="Sparse", "methodMuCovEst"="smooth", "error"=TRUE, "nRegGrid"=nRegGrid))
+            "dataType"="Sparse", "methodMuCovEst"="smooth", "error"=TRUE, "methodSelectK"="AIC", "nRegGrid"=nRegGrid))
           Y_PACE[,repet]        <- t(fitted(result_PACE))[,1]
         }
-        if(any(DGP==c("DGP2", "DGP2"))){
+        if(any(DGP==c("DGP2", "DGP3"))){
           ##
           ## Reconstruction operator for fully observed fragments with alignment at fully observed fragment
           result_ENo_CG_AYes    <- ReconstPoFD::reconstructKneipLiebl(Ly           = Y_list, 
@@ -157,15 +157,9 @@ for(DGP in c('DGP1','DGP2','DGP3')){
           ## Reconstruction Operator of Kraus (2015, JRSSB)
           result_Kraus          <- ReconstPoFD::reconstructKraus(X_mat = Y_mat, reconst_fcts = 1)
           Y_Kraus[,repet]       <- result_Kraus[['X_reconst_mat']]
-          ##
-          ## PACE of Yao, Mueller, Wang (2005, JASA)
-          result_PACE_ENo_CG    <- fdapace::FPCA(Ly = Y_list, Lt = U_list, optns = list(
-            "methodMuCovEst"="smooth", "error"=FALSE, "nRegGrid"=nRegGrid))
-          Y_PACE_ENo_CG[,repet] <- t(fitted(result_PACE_ENo_CG))[,1]
         }
         ## ##################################################################
-        #if(repet %% 100 == 0) cat("repet/B=",repet,"/",B,"\n")
-        cat("repet/B=",repet,"/",B,"\n")
+        if(repet %% 100 == 0) cat("repet/B=",repet,"/",B,"\n")
         ## ##################################################################
       } ## End of B-loop
       ##
@@ -195,7 +189,7 @@ for(DGP in c('DGP1','DGP2','DGP3')){
           }
           ##
           if(any(DGP==c('DGP2','DGP3'))){
-            par(mfrow=c(2,2))
+            par(mfrow=c(1,3))
             plot(Y_ENo_CG_AYes[,i], type="b", ylim=range(Y_ENo_CG_AYes[,i],Y_target_true_mat[slct_M,1]),main="Y_ENo_CG_AYes")
             lines(Y_target_true_mat[,1]); points(y=Y_ENo_CG_AYes[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
             ##
@@ -204,9 +198,6 @@ for(DGP in c('DGP1','DGP2','DGP3')){
             ##
             plot(Y_Kraus[,i], type="b", ylim=range(Y_Kraus[,i],Y_target_true_mat[slct_M,1]),main="Kraus")
             lines(Y_target_true_mat[,1]); points(y=Y_Kraus[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
-            ##
-            plot(Y_PACE_ENo_CG[,i], type="b", ylim=range(Y_PACE_ENo_CG[,i],Y_target_true_mat[slct_M,1]),main="Y_PACE_ENo_CG")
-            lines(Y_target_true_mat[,1]); points(y=Y_PACE_ENo_CG[slct_M,i], x=c(1:nRegGrid)[slct_M], col="red")
           }
           par(mfrow=c(1,1))
           Sys.sleep(1)
@@ -224,7 +215,6 @@ for(DGP in c('DGP1','DGP2','DGP3')){
       Y_ENo_CG_AYes_Mean   <- apply(Y_ENo_CG_AYes[  slct_M, ], 1, function(x){mean(ReconstPoFD:::winsorize_x(x,cut=cut))})
       Y_ENo_CG_ANo_Mean    <- apply(Y_ENo_CG_ANo[   slct_M, ], 1, function(x){mean(ReconstPoFD:::winsorize_x(x,cut=cut))})
       Y_Kraus_Mean         <- apply(Y_Kraus[        slct_M, ], 1, function(x){mean(ReconstPoFD:::winsorize_x(x,cut=cut))})
-      Y_PACE_ENo_CG_Mean   <- apply(Y_PACE_ENo_CG[  slct_M, ], 1, function(x){mean(ReconstPoFD:::winsorize_x(x,cut=cut))})
       ##
       ## ## \int_{Missing} (E(X(t))-X(t))^2 dt ('Integrated squared bias')
       Y_EYes_AYes_Int_BiasSq     <- sum( (Y_EYes_AYes_Mean     - Y_target_true_mat[slct_M, 1])^2 ) * (b-a)/nRegGrid
@@ -236,8 +226,7 @@ for(DGP in c('DGP1','DGP2','DGP3')){
       Y_ENo_CG_AYes_Int_BiasSq   <- sum( (Y_ENo_CG_AYes_Mean   - Y_target_true_mat[slct_M, 1])^2 ) * (b-a)/nRegGrid
       Y_ENo_CG_ANo_Int_BiasSq    <- sum( (Y_ENo_CG_ANo_Mean    - Y_target_true_mat[slct_M, 1])^2 ) * (b-a)/nRegGrid
       Y_Kraus_Int_BiasSq         <- sum( (Y_Kraus_Mean         - Y_target_true_mat[slct_M, 1])^2 ) * (b-a)/nRegGrid
-      Y_PACE_ENo_CG_Int_BiasSq   <- sum( (Y_PACE_ENo_CG_Mean   - Y_target_true_mat[slct_M, 1])^2 ) * (b-a)/nRegGrid
-      
+
       ## \int_{Missing} Var(X(t)) dt ('Integrated variance')
       Y_EYes_AYes_Int_Var     <- sum(apply(Y_EYes_AYes[    slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
       Y_EYes_ANo_Int_Var      <- sum(apply(Y_EYes_ANo[     slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
@@ -248,14 +237,13 @@ for(DGP in c('DGP1','DGP2','DGP3')){
       Y_ENo_CG_AYes_Int_Var   <- sum(apply(Y_ENo_CG_AYes[  slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
       Y_ENo_CG_ANo_Int_Var    <- sum(apply(Y_ENo_CG_ANo[   slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
       Y_Kraus_Int_Var         <- sum(apply(Y_Kraus[        slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
-      Y_PACE_ENo_CG_Int_Var   <- sum(apply(Y_PACE_ENo_CG[  slct_M, ], 1, function(x){var(ReconstPoFD:::winsorize_x(x,cut=cut))})) * (b-a)/nRegGrid
       ##
       BiasSq_vec        <- c(Y_EYes_AYes_Int_BiasSq,   Y_EYes_ANo_Int_BiasSq,   Y_EYes_AYes_CES_Int_BiasSq, Y_EYes_ANo_CES_Int_BiasSq, Y_PACE_Int_BiasSq,
-                             Y_ENo_CG_AYes_Int_BiasSq, Y_ENo_CG_ANo_Int_BiasSq, Y_Kraus_Int_BiasSq,         Y_PACE_ENo_CG_Int_BiasSq)
+                             Y_ENo_CG_AYes_Int_BiasSq, Y_ENo_CG_ANo_Int_BiasSq, Y_Kraus_Int_BiasSq)
       Var_vec           <- c(Y_EYes_AYes_Int_Var,      Y_EYes_ANo_Int_Var,      Y_EYes_AYes_CES_Int_Var,    Y_EYes_ANo_CES_Int_Var,    Y_PACE_Int_Var,
-                             Y_ENo_CG_AYes_Int_Var,    Y_ENo_CG_ANo_Int_Var,    Y_Kraus_Int_Var,            Y_PACE_ENo_CG_Int_Var)
-      names(BiasSq_vec) <- c("EYes_AYes", "EYes_ANo", "EYes_AYes_CES", "EYes_ANo_CES", "PACE", "ENo_CG_AYes", "ENo_CG_ANo", "Kraus", "PACE_ENo_CG")
-      names(Var_vec)    <- c("EYes_AYes", "EYes_ANo", "EYes_AYes_CES", "EYes_ANo_CES", "PACE", "ENo_CG_AYes", "ENo_CG_ANo", "Kraus", "PACE_ENo_CG")
+                             Y_ENo_CG_AYes_Int_Var,    Y_ENo_CG_ANo_Int_Var,    Y_Kraus_Int_Var)
+      names(BiasSq_vec) <- c("EYes_AYes", "EYes_ANo", "EYes_AYes_CES", "EYes_ANo_CES", "PACE", "ENo_CG_AYes", "ENo_CG_ANo", "Kraus")
+      names(Var_vec)    <- c("EYes_AYes", "EYes_ANo", "EYes_AYes_CES", "EYes_ANo_CES", "PACE", "ENo_CG_AYes", "ENo_CG_ANo", "Kraus")
       ##
       ## c(na.omit(BiasSq_vec))
       ## c(na.omit(Var_vec))
@@ -277,11 +265,10 @@ End.Time <- Sys.time()
 round(End.Time - Start.Time, 2)
 ##------------------------------------
 
-## rm(list=ls())
 
-DGP <- c('DGP1','DGP2','DGP3')[2]
-m   <- c(15,  50)[1] 
-n   <- c(50,  80)[2] 
+DGP <- c('DGP1','DGP2','DGP3')[3]
+m   <- c(15,  30)[1] 
+n   <- c(50, 100)[2] 
 
 ## Load results:
 if(any(DGP==c('DGP1'))){
@@ -289,28 +276,25 @@ if(any(DGP==c('DGP1'))){
 }
 if(any(DGP==c('DGP2','DGP3'))){
   load(file = paste0(DGP,"_n",n,"_simResults.RData"))
-  BiasSq_vec_orig <- BiasSq_vec
-  #BiasSq_vec[4] <- NA
 }
 ##
-col_slct   <- !is.na(BiasSq_vec)
-BiasSq_vec <- BiasSq_vec[col_slct]
-Var_vec    <- Var_vec[col_slct]
-MSE_vec    <- BiasSq_vec + Var_vec 
-##
+col_slct         <- !is.na(BiasSq_vec)
+BiasSq_vec       <- BiasSq_vec[col_slct]
+Var_vec          <- Var_vec[col_slct]
+MSE_vec          <- BiasSq_vec + Var_vec 
 ##
 MSE_norm_vec     <- c(MSE_vec)    / max(MSE_vec)
 BiasSq_norm_vec  <- c(BiasSq_vec) / max(MSE_vec)
 Var_norm_vec     <- c(Var_vec)    / max(MSE_vec)
-
+##
 par(mfrow=c(1,3))
-barplot(MSE_norm_vec, main="",    names.arg = c("NoPS", "YesPS", "CES", "PACE", "Kraus")[col_slct], ylim = c(0,1))
+barplot(MSE_norm_vec, main="",    names.arg = names(MSE_norm_vec), ylim = c(0,1))
 mtext(text = paste0("MSRE (", round(max(MSE_vec),2),")"), side = 3, line = 1)
-barplot(BiasSq_norm_vec, main="", names.arg = c("NoPS", "YesPS", "CES", "PACE", "Kraus")[col_slct], ylim = c(0,1))
+barplot(BiasSq_norm_vec, main="", names.arg = names(MSE_norm_vec), ylim = c(0,1))
 mtext(text = "Squared Bias", side = 3, line = 1)
-barplot(Var_norm_vec, main="",    names.arg = c("NoPS", "YesPS", "CES", "PACE", "Kraus")[col_slct], ylim = c(0,1))
+barplot(Var_norm_vec, main="",    names.arg = names(MSE_norm_vec), ylim = c(0,1))
 mtext(text = "Variance", side = 3, line = 1)
-par(mfrow=c(1,1))      
+par(mfrow=c(1,1))   
 
 
 # Interpretation: 

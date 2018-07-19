@@ -364,7 +364,7 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FAL
   Y.pred        <- Y.pred[slct,,drop=FALSE]
   n_compl       <- nrow(Y.pred)
   ##
-  if(n_compl <= 5){warning("Very few (<=5) complete functions; do not trust the GCV-result.")}
+  # if(n_compl <= 5){warning("Very few (<=5) complete functions; do not trust the GCV-result.")}
   if(n_compl <= 1){stop("Too few complete functions.")}
   ##
   # Numerical integration for calculation of eigenvalues (see Ramsay & Silverman, Ch.8)

@@ -7,20 +7,86 @@
 #' @param method       One of the following options: c('Error=0_AlignYES_CommonGrid', 'Error>0_AlignYES', 'Error>=0_AlignNO', 'Error>0_AlignYES_CEscores','Error>0_AlignNO_CEscores')
 #' @param K            Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.
 #' @param maxbins      If maxbins=NULL (default), maxbins is set to 1000. For speeding up simulations, use, for instance maxbins=100.
+#' @param nRegGrid     Number of gridpoints within used for the reconstruction result.
+#' @param progrbar     Show progress bar (TRUE) or not (FALSE, default)
 #' @export reconstructKneipLiebl
 #' @examples  
+#' 
 #' a <- 0; b <- 1
 #' set.seed(223109)
+#' 
+#' ## Generate partially observed functional data with error
+#' SimDat        <- simuldata(n = 50, m=15, a = a, b = b, DGP="DGP1")
+#' ## 
+#' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
+#' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
+#' ##
+#' ## Reconstruction with alignments of reconstructed parts and presmoothed fragments
+#' ## Classical scores
+#' reconst_result_1 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
+#' method = 'Error>0_AlignYES', reconst_fcts = 1:3)
+#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
+#' ##
+#' ## Reconstruction with out alignments
+#' ## Classical scores
+#' reconst_result_2 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
+#' method = 'Error>=0_AlignNO', reconst_fcts = 1:3)
+#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3) 
+#' ##
+#' par(mfrow=c(1,3))
+#' matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l", 
+#' main="Orig. Data", xlim=c(a,b))
+#' matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5), 
+#' type="l", main="With Alignment", ylab="", xlab="", xlim=c(a,b))
+#' matlines(x=U_mat[,1:3], y=Y_mat[,1:3], col=gray(.2), lwd=2) 
+#' matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5), 
+#' type="l", main="Without Alignment", ylab="", xlab="", xlim=c(a,b))
+#' matlines(x=U_mat[,1:3], y=Y_mat[,1:3], col=gray(.2), lwd=2)
+#' par(mfrow=c(1,1))
+#' 
+#' 
+#' ## Reconstruction with alignments of reconstructed parts and presmoothed fragments
+#' ## PACE scores
+#' reconst_result_1 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
+#' method = 'Error>0_AlignYES_CEscores', reconst_fcts = 1:3)
+#' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
+#' ##
+#' ## Reconstruction with out alignments
+#' ## PACE scores
+#' reconst_result_2 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
+#' method = 'Error>0_AlignNO_CEscores', reconst_fcts = 1:3)
+#' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
+#' U_reconst_mat_2  <- matrix(unlist(reconst_result_2[['U_reconst_list']]), ncol=3) 
+#' ##
+#' par(mfrow=c(1,3))
+#' matplot(x=U_mat[,1:3], y=Y_mat[,1:3], ylab="", col=gray(.5), type="l", 
+#' main="Orig. Data", xlim=c(a,b))
+#' matplot(x=U_reconst_mat_1, y=Y_reconst_mat_1, col=gray(.5), 
+#' type="l", main="With Alignment", ylab="", xlab="", xlim=c(a,b))
+#' matlines(x=U_mat[,1:3], y=Y_mat[,1:3], col=gray(.2), lwd=2) 
+#' matplot(x=U_reconst_mat_2, y=Y_reconst_mat_2, col=gray(.5), 
+#' type="l", main="Without Alignment", ylab="", xlab="", xlim=c(a,b))
+#' matlines(x=U_mat[,1:3], y=Y_mat[,1:3], col=gray(.2), lwd=2)
+#' par(mfrow=c(1,1))
+#' 
+#' 
+#' ##
+#' ## Generate partially observed functional data without error 
 #' SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
 #' ## 
 #' Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 #' U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 #' ##
+#' ## Reconstruction with alignments of reconstructed parts and observed fragments
 #' reconst_result_1 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 #' method = 'Error=0_AlignYES_CommonGrid', reconst_fcts = 1:3)
 #' Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
 #' U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
 #' ##
+#' ## Reconstruction without alignments
 #' reconst_result_2 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 #' method = 'Error>=0_AlignNO', reconst_fcts = 1:3)
 #' Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
@@ -47,7 +113,8 @@ reconstructKneipLiebl <- function(Ly,
                                                    'Error>0_AlignNO_CEscores'),
                                   K            = NULL,
                                   nRegGrid     = NULL,
-                                  maxbins      = NULL){
+                                  maxbins      = NULL, 
+                                  progrbar     = FALSE){
   ##
   method <- switch(method, 
                    `Error=0_AlignYES_CommonGrid` = 1, 
@@ -80,10 +147,10 @@ reconstructKneipLiebl <- function(Ly,
       if( any(fpca_obj$obs_argvalsO[[i]] != fpca_obj$argvalsO[[i]]) ){stop("The fragment must be fully observed (obs_argvalsO == argvalsO).") }
       ##
       if(is.null(K)){
-        cat("Select K via GCV:\n")
         K_vec[i]   <- gcvKneipLiebl(fpca_obj = fpca_obj, 
                                     argvalsO = fpca_obj$argvalsO[[i]], 
-                                    method   = 1)
+                                    method   = 1,
+                                    progrbar = progrbar)
       }else{K_vec[i] <- K}
       ##
       fragmO     <- c(stats::na.omit(c(fpca_obj$Y[i,])))
@@ -118,10 +185,10 @@ reconstructKneipLiebl <- function(Ly,
         stop("The range of obs_argvalsO of the fragment must equal the range of argvalsO.") }
       ##
       if(is.null(K)){
-        cat("Select K via GCV:\n")
         K_vec[i]   <- gcvKneipLiebl(fpca_obj = fpca_obj, 
                                     argvalsO = fpca_obj$argvalsO[[i]], 
-                                    method   = 2)
+                                    method   = 2,
+                                    progrbar = progrbar)
       }else{K_vec[i] <- K}
       ##
       smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
@@ -155,10 +222,10 @@ reconstructKneipLiebl <- function(Ly,
     for(i in 1:length(reconst_fcts)){ # i <- 1
       ##
       if(is.null(K)){
-        cat("Select K via GCV:\n")
         K_vec[i]   <- gcvKneipLiebl(fpca_obj = fpca_obj, 
                                     argvalsO = fpca_obj$argvalsO[[i]], 
-                                    method   = 3)
+                                    method   = 3,
+                                    progrbar = progrbar)
       }else{K_vec[i] <- K}
       ##
       result_tmp <- reconstKneipLiebl_fun(mu          = fpca_obj$mu, 
@@ -191,10 +258,10 @@ reconstructKneipLiebl <- function(Ly,
         stop("The range of obs_argvalsO of the fragment must equal the range of argvalsO.") }
       ##
       if(is.null(K)){
-        cat("Select K via GCV:\n")
         K_vec[i]   <- gcvKneipLiebl(fpca_obj = fpca_obj, 
                                     argvalsO = fpca_obj$argvalsO[[i]], 
-                                    method   = 4)
+                                    method   = 4,
+                                    progrbar = progrbar)
       }else{K_vec[i] <- K}
       ##
       smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit(c(fpca_obj$Y[i,]))), x=fpca_obj$obs_argvalsO[[i]])
@@ -228,10 +295,10 @@ reconstructKneipLiebl <- function(Ly,
     for(i in 1:length(reconst_fcts)){ # i <- 1
       ##
       if(is.null(K)){
-        cat("Select K via GCV:\n")
         K_vec[i]   <- gcvKneipLiebl(fpca_obj = fpca_obj, 
                                     argvalsO = fpca_obj$argvalsO[[i]], 
-                                    method   = 5)
+                                    method   = 5,
+                                    progrbar = progrbar)
       }else{K_vec[i] <- K}
       ##
       result_tmp <- reconstKneipLiebl_fun(mu          = fpca_obj$mu, 
@@ -253,7 +320,7 @@ reconstructKneipLiebl <- function(Ly,
     ## Evaluate the reconstruced functions at a regular gird of length nRegGrid
     xout <- seq(from = min(fpca_obj$argvals), to = max(fpca_obj$argvals), len=nRegGrid)
     for(i in 1:length(reconst_fcts)){ # i <- 1
-      Reconstr_on_RegGrid  <- spline(y = Y_reconst_list[[i]], x = U_reconst_list[[i]], xout = xout)
+      Reconstr_on_RegGrid  <- stats::spline(y = Y_reconst_list[[i]], x = U_reconst_list[[i]], xout = xout)
       Y_reconst_list[[i]]  <- Reconstr_on_RegGrid$y
       U_reconst_list[[i]]  <- Reconstr_on_RegGrid$x
     }
@@ -267,7 +334,7 @@ reconstructKneipLiebl <- function(Ly,
 }
 
 
-gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
+gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FALSE){
   ##
   Y          <- fpca_obj$Y # data pre-processed by irreg2mat()
   mu         <- fpca_obj$mu
@@ -293,10 +360,9 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
   Y.pred        <- Y.compl
   Y.pred[,locM] <- NA
   ## the artifical fragments must have sufficiently many observations (>=5) for the pre-smoothing
-  slct          <- apply(Y.pred, 1, function(x){length(c(stats::na.omit(x)))}>=5)
-  compl_fcts    <- compl_fcts[slct]    
+  slct          <- apply(Y.pred, 1, function(x){length(c(stats::na.omit(x)))>=5})
   Y.pred        <- Y.pred[slct,,drop=FALSE]
-  n_compl       <- length(compl_fcts[compl_fcts==TRUE])
+  n_compl       <- nrow(Y.pred)
   ##
   if(n_compl <= 5){warning("Very few (<=5) complete functions; do not trust the GCV-result.")}
   if(n_compl <= 1){stop("Too few complete functions.")}
@@ -320,9 +386,12 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
   Z                 <- efunctionsO
   ##
   rss_mat           <- matrix(NA, n_compl, npc)
-  ## Progress Bar
-  pb                <- utils::txtProgressBar(min = 0, max = n_compl*npc, style = 3)
-  counter           <- 0
+  if(progrbar){
+    ## Progress Bar
+    cat("Select K via GCV:\n")
+    pb                <- utils::txtProgressBar(min = 0, max = n_compl*npc, style = 3)
+    counter           <- 0
+  }
   ##
   for(i in seq_len(n_compl)){# i <- 1
     Y.cent            <- c(Y.pred[i,,drop=FALSE] - matrix(mu, 1, ncol(Y)))
@@ -343,11 +412,19 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
     ##
     if(any(method==c(4,5))){
       ## CEscores (PACE)
-      if(sigma2           ==  0){stop("Measurement error estimated to be zero; CEscores cannot be estimated.")}
-      if(length(obs_locO) < npc){stop("There are fewer observed points than PCs; CEscores cannot be estimated.")}
-      Zcur           <- Z[obs_locO,,drop=FALSE]
-      ZtZ_sD.inv     <- solve(crossprod(Zcur) + sigma2 * D.inv)
-      CEscoresO      <- c(ZtZ_sD.inv %*% t(Zcur) %*% c(stats::na.omit(Y.cent)))
+      if(sigma2           ==  0){stop("Measurement error estimated to be zero.")}#; we use: sigma2 <- 1e-6."); sigma2 <- 1e-6}
+      if(length(obs_locO) < npc){
+        warning("There are fewer observed points than PCs; we use npc = length(obs_locO).")
+        npcO       <- length(obs_locO)
+        Zcur       <- Z[obs_locO,1:npcO,drop=FALSE]
+        ZtZ_sD.inv <- solve(crossprod(Zcur) + sigma2 * D.inv[1:npcO,1:npcO])
+        CEscoresO  <- c(ZtZ_sD.inv %*% t(Zcur) %*% c(stats::na.omit(Y.cent)))
+        CEscoresO  <- c(CEscoresO, rep(0, npc-npcO))
+      }else{
+        Zcur       <- Z[obs_locO,,drop=FALSE]
+        ZtZ_sD.inv <- solve(crossprod(Zcur) + sigma2 * D.inv)
+        CEscoresO  <- c(ZtZ_sD.inv %*% t(Zcur) %*% c(stats::na.omit(Y.cent)))
+      }
     }
     ##
     for(k in seq_len(npc)){# k <- 3
@@ -374,11 +451,13 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99){
       }
       rss_mat[i,k] <- sum((result_tmp[['y_reconst']][locM] - Y.compl[i,locM])^2, na.rm = TRUE)
       #cat("i=",i," k=",k,"\n")
-      counter <- counter+1
-      utils::setTxtProgressBar(pb, counter)
+      if(progrbar){
+        counter <- counter+1
+        utils::setTxtProgressBar(pb, counter)
+      }
     }
   }
-  close(pb)
+  if(progrbar){close(pb)}
   ##
   gcv_k_vec <- colSums(rss_mat)/((1-1:npc/n_compl)^2)
   K.gcv     <- which.min(gcv_k_vec)
@@ -418,7 +497,19 @@ reconstKneipLiebl_fun <- function(mu, cov, argvals, argvalsO, scoresO, efunction
 }
 
 
-my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE, maxbins = NULL){
+PACE_fun <- function(mu, argvals, CEscores, efunctions, K=NULL){
+  ##
+  K        <- min(ncol(efunctions), K)
+  ##
+  reconstr <- unname(c( t(as.matrix(mu)) + t(CEscores[1:K]) %*% t(efunctions[,1:K]) ))
+  ##
+  ## ######################
+  return(list("y_reconst"  = c(reconstr), "x_reconst"  = c(argvals)))
+  ## ######################
+}
+
+
+my.fpca <- function(Ly, Lu, reconst_fcts = NULL, pev = 0.99, CEscores = TRUE, center = TRUE, maxbins = NULL){
   
   n      <- length(Ly)
   id_vec <- NULL
@@ -520,6 +611,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     evalues    <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
     evalues    <- replace(evalues, which(evalues <= 0), 0)
     npc        <- length(evalues[evalues>0])
+    npc        <- ifelse(is.null(pev), npc, which(cumsum(evalues[evalues>0])/sum(evalues[evalues>0])>=pev)[1])
     efunctions <- matrix(Winvsqrt %*% eigen(V, symmetric = TRUE)$vectors[, seq(len = npc)], nrow = nrow(V), ncol = npc)
     evalues    <- eigen(V, symmetric = TRUE, only.values = TRUE)$values[1:npc]  # use correct matrix for eigenvalue problem
     # Estimated covariance function
@@ -533,6 +625,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     sigma2     <- max(stats::weighted.mean(DIAG, w = w2, na.rm = TRUE), 0)
     ##
   }
+
   ## computations for observed fragments
   muO          <- vector("list", length(reconst_fcts))
   scoresO      <- vector("list", length(reconst_fcts))
@@ -548,13 +641,15 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     Winvsqrt          <- diag(1/(sqrt(w)))
     locO              <- match(argvalsO[[i]],argvals)
     # CovOO
-    V                 <- Wsqrt %*% cov[locO,locO] %*% Wsqrt
-    evalues           <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
-    evalues           <- replace(evalues, which(evalues <= 0), 0)
-    npc               <- length(evalues[evalues>0])  
-    efunctionsO[[i]]  <- matrix(Winvsqrt %*% eigen(V, symmetric = TRUE)$vectors[, seq(len = npc)], nrow = nrow(V), ncol = npc)
-    evaluesO[[i]]     <- eigen(V, symmetric = TRUE, only.values = TRUE)$values[1:npc]  # use correct matrix for eigenvalue problem
-    D.inv             <- diag(1/evaluesO[[i]], nrow = npc, ncol = npc)
+    VO                <- Wsqrt %*% cov[locO,locO] %*% Wsqrt
+    evalO             <- eigen(VO, symmetric = TRUE, only.values = TRUE)$values
+    evalO             <- replace(evalO, which(evalO <= 0), 0)
+    npcO              <- length(evalO[evalO>0])  
+    npcO              <- ifelse(is.null(pev), npcO, which(cumsum(evalO[evalO>0])/sum(evalO[evalO>0])>=pev)[1])
+    efunctionsO[[i]]  <- matrix(Winvsqrt %*% eigen(VO, symmetric = TRUE)$vectors[, seq(len = npcO)], nrow = nrow(VO), ncol = npcO)
+    evaluesO[[i]]     <- eigen(VO, symmetric = TRUE, only.values = TRUE)$values[1:npcO]  # use correct matrix for eigenvalue problem
+    ##
+    D.inv             <- diag(1/evaluesO[[i]], nrow = npcO, ncol = npcO)
     Z                 <- efunctionsO[[i]]
     Y.cent            <- c(Y.pred[i,,drop=FALSE] - matrix(mu, 1, D))
     obs_locO          <- match(names(c(stats::na.omit((Y.pred[i,])))), as.character(argvalsO[[i]]))
@@ -562,10 +657,10 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
     ## 
     if(CEscores){
       ## CEScores (i.e., PACE-Scores)
-      if(sigma2           ==  0){warning("Measurement error estimated to be zero; CEscores cannot be estimated.")}
-      if(length(obs_locO) < npc){warning("There are fewer observed points than PCs; CEscores cannot be estimated.")}
-      Zcur           <- Z[obs_locO,,drop=FALSE]
-      ZtZ_sD.inv     <- solve(crossprod(Zcur) + sigma2 * D.inv)
+      if(sigma2           ==   0){stop("Measurement error estimated to be zero.")}#; we use: sigma2 = 1e-6."); sigma2 <- 1e-6}
+      if(length(obs_locO) < npcO){warning("There are fewer observed points than PCs; we use npcO = length(obs_locO)."); npcO <- length(obs_locO)}
+      Zcur           <- Z[obs_locO,1:npcO,drop=FALSE]
+      ZtZ_sD.inv     <- solve(crossprod(Zcur) + sigma2 * D.inv[1:npcO,1:npcO])
       CEscoresO[[i]] <- c(ZtZ_sD.inv %*% t(Zcur) %*% c(stats::na.omit(Y.cent)))
     } else {
       CEscoresO[[i]] <- NA
@@ -576,11 +671,6 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, CEscores = TRUE, center = TRUE,
                           FUN    = function(ef){pracma::trapz(y=ef*c(stats::na.omit(Y.cent)),x=obs_argvalsO[[i]])})
     ##
     muO[[i]]     <- mu[locO]
-    ##
-    # Yhat    <- t(as.matrix(muO[[i]])) + t(scoresO[[i]]) %*% t(efunctionsO[[i]])
-    # Yhat_CE <- t(as.matrix(muO[[i]])) + t(CEscoresO[[i]]) %*% t(efunctionsO[[i]])
-    # plot( y=c(Yhat),    x=argvalsO[[i]], type="l")
-    # lines(y=c(Yhat_CE), x=argvalsO[[i]])
   }
   ## Return results
   ret.objects <- c("Y", "mu", "muO", "cov", "sigma2",
@@ -635,7 +725,15 @@ quadWeights <- function(argvals, method = "trapezoidal"){
 }
 
 
-
+winsorize_x <- function(x, cut = 0.01){
+  if(!any(is.na(x))){
+    cut_point_top    <- stats::quantile(x, 1 - cut)
+    cut_point_bottom <- stats::quantile(x,     cut)
+    i <-  which(x >= cut_point_top);    x[i] <- cut_point_top
+    j <-  which(x <= cut_point_bottom); x[j] <- cut_point_bottom
+  }
+  return(x)
+}
 
 
 
@@ -646,16 +744,16 @@ quadWeights <- function(argvals, method = "trapezoidal"){
 # Kraus <- rep(NA,B)
 # PACE  <- rep(NA,B)
 # for(r in 1:B){# r <- 1
-#   DGP        <- "DGP1"
-#   while(TRUE){
-#     SimDat   <- simuldata(n = 100, m=15, a = 0, b = 1, nRegGrid = 51, DGP=DGP)
-#     #if(any(is.na(SimDat$Y_mat[,1]))){break}
-#     if(!all(range(c(na.omit(SimDat$U_mat[,1])))==c(0,1))){break}
-#   }
-#   #persp(z=var(t(SimDat$Y_true_mat)))
-#   Y_list     <- SimDat[['Y_list']]
-#   U_list     <- SimDat[['U_list']]
-#   ###
+# DGP        <- "DGP2"
+# while(TRUE){
+#   SimDat   <- simuldata(n = 100, m=15, a = 0, b = 1, nRegGrid = 51, DGP=DGP)
+#   #if(any(is.na(SimDat$Y_mat[,1]))){break}
+#   if(!all(range(c(na.omit(SimDat$U_mat[,1])))==c(0,1))){break}
+# }
+# #persp(z=var(t(SimDat$Y_true_mat)))
+# Y_list     <- SimDat[['Y_list']]
+# U_list     <- SimDat[['U_list']]
+# ###
 #   test3 <- reconstructKneipLiebl(Ly=Y_list, Lu=U_list, reconst_fcts=1, method = c('Error=0_AlignYES_CommonGrid',
 #                                                                                   'Error>0_AlignYES',
 #                                                                                   'Error>=0_AlignNO',

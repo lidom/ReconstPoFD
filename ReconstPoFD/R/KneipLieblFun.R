@@ -416,7 +416,7 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FAL
     ##
     if(any(method==c(4,5))){
       ## CEscores (PACE)
-      if(sigma2           ==  0){stop("Measurement error estimated to be zero.")}#; we use: sigma2 <- 1e-6."); sigma2 <- 1e-6}
+      if(sigma2           ==  0){warning("Measurement error estimated to be zero; we use: sigma2 <- 1e-6."); sigma2 <- 1e-6}
       if(length(obs_locO) < npc){
         warning("There are fewer observed points than PCs; we use npc = length(obs_locO).")
         npcO       <- length(obs_locO)
@@ -661,7 +661,7 @@ my.fpca <- function(Ly, Lu, reconst_fcts = NULL, pev = 0.99, CEscores = TRUE, ce
     ## 
     if(CEscores){
       ## CEScores (i.e., PACE-Scores)
-      if(sigma2           ==   0){stop("Measurement error estimated to be zero.")}#; we use: sigma2 = 1e-6."); sigma2 <- 1e-6}
+      if(sigma2           ==   0){warning("Measurement error estimated to be zero; we use: sigma2 = 1e-6."); sigma2 <- 1e-6}
       if(length(obs_locO) < npcO){warning("There are fewer observed points than PCs; we use npcO = length(obs_locO)."); npcO <- length(obs_locO)}
       Zcur           <- Z[obs_locO,1:npcO,drop=FALSE]
       ZtZ_sD.inv     <- solve(crossprod(Zcur) + sigma2 * D.inv[1:npcO,1:npcO])

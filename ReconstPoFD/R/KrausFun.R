@@ -134,8 +134,6 @@ reconstKraus_fun <- function(cov_mat, X_cent_vec, alpha=1e-4){
 ## -------------------------------------------------------------------------
 gcvKraus <- function(cov_mat, mean_vec, X_Compl_mat, M_bool_vec, alpha){
   n_Compl  <- ncol(X_Compl_mat)
-  if(n_Compl <= 10){warning("Very few (<=10) complete functions; do not trust the GCV-result.")}
-  if(n_Compl <= 1){stop("Too few complete functions.")}
   rss_vec  <- rep(NA,n_Compl)
   ##
   for(j in 1:n_Compl){

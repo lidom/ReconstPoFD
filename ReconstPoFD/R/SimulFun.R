@@ -38,7 +38,7 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
-  eps_var  <- .025
+  eps_var  <- .125
   n_basis  <-  50
   ##
   ## Generation of prediction points U

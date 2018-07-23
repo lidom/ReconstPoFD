@@ -11,7 +11,7 @@ setwd("/home/dom/ownCloud/Kneip_Liebl_Reconstruction/Simulation_Submission_2")
 
 ## #######################################
 ## Number of MC-Repetitions
-B         <-  500
+B         <-  100
 ## #######################################
 
 ## #######################################
@@ -43,7 +43,7 @@ for(DGP in c('DGP1','DGP2','DGP3')){
       ## Preselecting partially observed *target* functions to be reconstructed
       ## #######################################################################
       ##
-      set.seed(109223)
+      set.seed(123)
       ##
       if(DGP=='DGP1'){SimDat <- ReconstPoFD::simuldata(n = 1, m = m, a = a, b = b, DGP='DGP1', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
       if(DGP=='DGP2'){SimDat <- ReconstPoFD::simuldata(n = 1, m = m, a = a, b = b, DGP='DGP2', nRegGrid = nRegGrid, determ_obs_interv = determ_obs_interv)}
@@ -260,7 +260,7 @@ round(End.Time - Start.Time, 2)
 
 
 DGP <- c('DGP1','DGP2','DGP3')[3]
-m   <- c(15,  30)[1] 
+m   <- c(15,  30)[2] 
 n   <- c(50, 100)[2] 
 
 ## Load results:
@@ -282,7 +282,7 @@ Var_norm_vec     <- c(Var_vec)    / max(MSE_vec)
 ##
 par(mfrow=c(1,3))
 barplot(MSE_norm_vec, main="",    names.arg = names(MSE_norm_vec), ylim = c(0,1))
-mtext(text = paste0("MSRE (", round(max(MSE_vec),2),")"), side = 3, line = 1)
+mtext(text = paste0("MSRE (", round(max(MSE_vec),2),") ","n=",n," m=",m, " B=",B," NSed"), side = 3, line = 1)
 barplot(BiasSq_norm_vec, main="", names.arg = names(MSE_norm_vec), ylim = c(0,1))
 mtext(text = "Squared Bias", side = 3, line = 1)
 barplot(Var_norm_vec, main="",    names.arg = names(MSE_norm_vec), ylim = c(0,1))

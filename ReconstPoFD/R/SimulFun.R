@@ -26,14 +26,14 @@
 #' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
 simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3')[1], nRegGrid = 51, determ_obs_interv = NULL){
-  if(DGP=="DGP1"){SimDat <- simuldata_1(n=n,m=m,a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP2"){SimDat <- simuldata_2(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
-  if(DGP=="DGP3"){SimDat <- simuldata_3(n=n,    a=a,b=b,nRegGrid=nRegGrid,determ_obs_interv=determ_obs_interv)}
+  if(DGP=="DGP1"){SimDat <- simuldata_1(n=n, m=m, a=a, b=b, nRegGrid=nRegGrid, determ_obs_interv=determ_obs_interv)}
+  if(any(DGP==c("DGP2","DGP3"))){
+    SimDat <- simuldata_2(n=n, a=a, b=b, DGP=DGP, nRegGrid=nRegGrid, determ_obs_interv=determ_obs_interv)
+  }
   return(SimDat)
 }
 
 ##-------------------------------------------------------------------------------------
-#simuldataDGP_1_2 <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2')[1], nRegGrid = 51, determ_obs_interv = NULL){
 simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
@@ -117,8 +117,7 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
 }
 
 ##-------------------------------------------------------------------------------------
-# simuldataKraus <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL)
-simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)
+simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
   ## Number of grid points in [a,b]
@@ -139,14 +138,8 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
   A_vec         <- rep(NA, n)
   B_vec         <- rep(NA, n)
   ##
-  for(i in 1:n){
-#    if(DGP=='DGP3'){
-#      mean_fun <- function(u){return(rep(1,length(u)))}
-#      ##
-#      xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
-#      xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
-#    }
-#    if(DGP=='DGP4'){
+  for(i in 1:n){ # i <- 1
+    if(DGP=='DGP2'){
     mean_fun <- function(u){return( ((u-a)/(b-a))^2 + sin(2*pi*((u-a)/(b-a))) )}
     ##
     xi1   <- 50*sqrt(exp(-((k_vec-1)^2))) * stats::rnorm(n = length(k_vec))
@@ -155,7 +148,13 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
       # ##
       # xi1   <- 50*exp(-((k_vec-1)^3)) * stats::rnorm(n = length(k_vec))
       # xi2   <- 50*exp(-((k_vec  )^3)) * stats::rnorm(n = length(k_vec))
-#    } 
+    } 
+    if(DGP=='DGP3'){
+         mean_fun <- function(u){return(rep(1,length(u)))}
+         ##
+         xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
+         xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
+    }
     ##
     U_vec  <- seq(a, b, len=p)
     ##
@@ -226,86 +225,86 @@ simuldata_2 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL
 }
 
 ##-------------------------------------------------------------------------------------
-# simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
-simuldata_3 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)  
-{
-  ##
-  ## Number of grid points in [a,b]
-  p <- nRegGrid
-  ##
-  Y_mat       <- matrix(NA, p, n)
-  U_mat       <- matrix(NA, p, n)
-  Y_true_mat  <- matrix(NA, p, n)
-  U_true_mat  <- matrix(NA, p, n)
-  ##
-  Y_list      <- vector("list", n)
-  U_list      <- vector("list", n)
-  Y_true_list <- vector("list", n)
-  U_true_list <- vector("list", n)
-  ##
-  A_vec         <- rep(NA, n)
-  B_vec         <- rep(NA, n)
-  ##
-  for(i in 1:n){
-#    if(DGP=='DGP5'){
-      mean_fun <- function(u){return( 10 - 5*((u-a)/(b-a) - 0.5)^3  )}
-      ##
-      rand_vec <- stats::rnorm(n = 3, sd=2)
-#    }
-    ##
-    loc_vec <- seq(a, b, len=length(rand_vec))
-    U_vec   <- seq(a, b, len=p)
-    ##
-    Y_vec <- stats::spline(x = loc_vec, y = rand_vec, method = "natural", xout = U_vec)$y + mean_fun(U_vec)
-    ##
-    if(is.null(determ_obs_interv)){
-      ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
-        B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
-      }else{
-        A_vec[i] = a
-        B_vec[i] = b
-      }
-    }else{
-      A_vec[i] = determ_obs_interv[1]
-      B_vec[i] = determ_obs_interv[2]
-    }
-    ##
-    Y_true_vec              <- Y_vec
-    Y_vec[U_vec < A_vec[i]] <- NA
-    Y_vec[U_vec > B_vec[i]] <- NA
-    ##
-    U_true_vec                   <- U_vec
-    U_vec[U_true_vec < A_vec[i]] <- NA
-    U_vec[U_true_vec > B_vec[i]] <- NA
-    ##
-    Y_mat[,i]        <- Y_vec
-    U_mat[,i]        <- U_vec
-    Y_true_mat[,i]   <- Y_true_vec
-    U_true_mat[,i]   <- U_true_vec
-    ##
-    Y_list[[i]]      <- c(stats::na.omit(Y_vec))
-    U_list[[i]]      <- c(stats::na.omit(U_vec))
-    Y_true_list[[i]] <- Y_true_vec
-    U_true_list[[i]] <- U_true_vec
-  }
-  return(list("Y_mat"  = Y_mat, 
-              "U_mat"  = U_mat,
-              "Y_list" = Y_list, 
-              "U_list" = U_list,
-              ##
-              "Y_true_mat"  = Y_true_mat, 
-              "U_true_mat"  = U_true_mat,
-              "Y_true_list" = Y_true_list, 
-              "U_true_list" = U_true_list,
-              ##
-              "A_vec"       = A_vec,
-              "B_vec"       = B_vec,
-              ##
-              "mean_true_vec" = mean_fun(U_true_mat[,1])
-  ))
-}
-
+# # simuldataWBF <- function(n=100, a=0, b=1, DGP=c('DGP5'), nRegGrid = 51, determ_obs_interv = NULL)
+# simuldata_3 <- function(n=100, a=0, b=1, nRegGrid = 51, determ_obs_interv = NULL)  
+# {
+#   ##
+#   ## Number of grid points in [a,b]
+#   p <- nRegGrid
+#   ##
+#   Y_mat       <- matrix(NA, p, n)
+#   U_mat       <- matrix(NA, p, n)
+#   Y_true_mat  <- matrix(NA, p, n)
+#   U_true_mat  <- matrix(NA, p, n)
+#   ##
+#   Y_list      <- vector("list", n)
+#   U_list      <- vector("list", n)
+#   Y_true_list <- vector("list", n)
+#   U_true_list <- vector("list", n)
+#   ##
+#   A_vec         <- rep(NA, n)
+#   B_vec         <- rep(NA, n)
+#   ##
+#   for(i in 1:n){
+# #    if(DGP=='DGP5'){
+#       mean_fun <- function(u){return( 10 - 5*((u-a)/(b-a) - 0.5)^3  )}
+#       ##
+#       rand_vec <- stats::rnorm(n = 3, sd=2)
+# #    }
+#     ##
+#     loc_vec <- seq(a, b, len=length(rand_vec))
+#     U_vec   <- seq(a, b, len=p)
+#     ##
+#     Y_vec <- stats::spline(x = loc_vec, y = rand_vec, method = "natural", xout = U_vec)$y + mean_fun(U_vec)
+#     ##
+#     if(is.null(determ_obs_interv)){
+#       ## Random observed interval
+#       if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+#         A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+#         B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
+#       }else{
+#         A_vec[i] = a
+#         B_vec[i] = b
+#       }
+#     }else{
+#       A_vec[i] = determ_obs_interv[1]
+#       B_vec[i] = determ_obs_interv[2]
+#     }
+#     ##
+#     Y_true_vec              <- Y_vec
+#     Y_vec[U_vec < A_vec[i]] <- NA
+#     Y_vec[U_vec > B_vec[i]] <- NA
+#     ##
+#     U_true_vec                   <- U_vec
+#     U_vec[U_true_vec < A_vec[i]] <- NA
+#     U_vec[U_true_vec > B_vec[i]] <- NA
+#     ##
+#     Y_mat[,i]        <- Y_vec
+#     U_mat[,i]        <- U_vec
+#     Y_true_mat[,i]   <- Y_true_vec
+#     U_true_mat[,i]   <- U_true_vec
+#     ##
+#     Y_list[[i]]      <- c(stats::na.omit(Y_vec))
+#     U_list[[i]]      <- c(stats::na.omit(U_vec))
+#     Y_true_list[[i]] <- Y_true_vec
+#     U_true_list[[i]] <- U_true_vec
+#   }
+#   return(list("Y_mat"  = Y_mat, 
+#               "U_mat"  = U_mat,
+#               "Y_list" = Y_list, 
+#               "U_list" = U_list,
+#               ##
+#               "Y_true_mat"  = Y_true_mat, 
+#               "U_true_mat"  = U_true_mat,
+#               "Y_true_list" = Y_true_list, 
+#               "U_true_list" = U_true_list,
+#               ##
+#               "A_vec"       = A_vec,
+#               "B_vec"       = B_vec,
+#               ##
+#               "mean_true_vec" = mean_fun(U_true_mat[,1])
+#   ))
+# }
+# 
 
 

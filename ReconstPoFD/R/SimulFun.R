@@ -74,17 +74,17 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
   Y_mat      <- matrix(NA, m, n)
   k_vec      <- 1:n_basis
   for(i in 1:n){
-#    if(DGP=="DGP1"){
-      # xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
-      # xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
-      xi1 <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
-      xi2 <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
-#    }
+    #    if(DGP=="DGP1"){
+    # xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
+    # xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
+    xi1 <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
+    xi2 <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
+    #    }
     # plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
-#    if(DGP=="DGP2"){
-#      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
-#      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
-#    }
+    #    if(DGP=="DGP2"){
+    #      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
+    #      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
+    #    }
     ##
     Y_true_mat[,i] <- c(c(rowMeans(
       sapply(k_vec, function(k){
@@ -139,38 +139,34 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, de
   B_vec         <- rep(NA, n)
   ##
   for(i in 1:n){ # i <- 1
-    if(DGP=='DGP2'){
     mean_fun <- function(u){return( ((u-a)/(b-a))^2 + sin(2*pi*((u-a)/(b-a))) )}
     ##
     xi1   <- 50*sqrt(exp(-((k_vec-1)^2))) * stats::rnorm(n = length(k_vec))
     xi2   <- 50*sqrt(exp(-((k_vec  )^2))) * stats::rnorm(n = length(k_vec))
-      # mean_fun <- function(u){return( ((u-a)/(b-a))^2 + 2*cos(2*pi*((u-a)/(b-a))) )}
-      # ##
-      # xi1   <- 50*exp(-((k_vec-1)^3)) * stats::rnorm(n = length(k_vec))
-      # xi2   <- 50*exp(-((k_vec  )^3)) * stats::rnorm(n = length(k_vec))
-    } 
-    if(DGP=='DGP3'){
-         mean_fun <- function(u){return(rep(1,length(u)))}
-         ##
-         xi1   <- 9*sqrt(3^(-2*(k_vec+1))) * stats::rnorm(n = length(k_vec))
-         xi2   <- 9*sqrt(3^(-2*(k_vec  ))) * stats::rnorm(n = length(k_vec))
-    }
     ##
     U_vec  <- seq(a, b, len=p)
     ##
     Y_vec <- c(rowMeans(
       sapply(k_vec, function(k){
         xi1[k] * cos(1*pi*k*(U_vec-a)/(b-a)) +
-        xi2[k] * sin(1*pi*k*(U_vec-a)/(b-a)) 
+          xi2[k] * sin(1*pi*k*(U_vec-a)/(b-a)) 
       }))) + mean_fun(U_vec)
     ##
     if(is.null(determ_obs_interv)){
       ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .7)){
-        # A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
-        # B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
-        A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .7))
-        B_vec[i]  <- A_vec[i] + 1-(a+ (b-a) * .7) 
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+        if(DGP=='DGP2'){
+          #A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+          #B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
+          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * .5))
+          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * .5) 
+        }
+        if(DGP=='DGP3'){
+          #A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
+          #B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
+          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * .8))
+          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * .8) 
+        }
       }else{
         A_vec[i] = a
         B_vec[i] = b
@@ -188,15 +184,6 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, de
     U_vec[U_true_vec < A_vec[i]] <- NA
     U_vec[U_true_vec > B_vec[i]] <- NA
     ##------------------------- 
-    # ## Kraus-Version (contains 'holes' that cannot be used with our method so far)
-    # d=1.4; f=0.2
-    # U_12 <- stats::runif(2)
-    # C    <- d*sqrt(U_12[1])
-    # E    <- f*U_12[2]
-    # M_lo <- max(0,C-E)
-    # M_up <- min(1,C+E)
-    # X_tmp[M_lo <= t_vec & t_vec <= M_up] <- NA
-    ##-------------------------
     Y_mat[,i]        <- Y_vec
     U_mat[,i]        <- U_vec
     Y_true_mat[,i]   <- Y_true_vec

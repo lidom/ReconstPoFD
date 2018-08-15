@@ -410,7 +410,7 @@ gcvKneipLiebl <- function(fpca_obj, argvalsO, method, pev = 0.99, progrbar = FAL
     ##
     if(any(method==c(3,4))){
       ## Pre-smoothing of framO
-      smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit((Y.pred[i,]))), x=argvalsO[obs_locO])
+      smooth.fit        <- stats::smooth.spline(y=c(stats::na.omit((Y.pred[i,]))), x=argvalsO[obs_locO], cv=TRUE)
       fragmO_presmooth  <- stats::predict(smooth.fit, argvalsO)$y
     }
     ##

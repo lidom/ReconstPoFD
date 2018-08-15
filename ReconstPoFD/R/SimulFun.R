@@ -166,7 +166,7 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, de
     ##
     if(is.null(determ_obs_interv)){
       ## Random observed interval
-      if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
+      if(1 == stats::rbinom(n = 1, size = 1, prob = .7)){
         # A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
         # B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
         A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .7))

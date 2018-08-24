@@ -26,7 +26,7 @@ simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
 This function allows to simulate partially observed functional data.
 }
 \examples{
-DGP=c('DGP1','DGP2','DGP3')[2]
+DGP=c('DGP1','DGP2','DGP3')[3]
 SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 Y_mat         <- SimDat[['Y_mat']]
 U_mat         <- SimDat[['U_mat']]
@@ -35,10 +35,12 @@ U_true_mat    <- SimDat[['U_true_mat']]
 mean_true_vec <- SimDat[['mean_true_vec']]
 ##
 par(mfrow=c(2,1))
-matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings")
+matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+main=ifelse(DGP=="DGP1", "Partially Observed Functions (plus noise)", 
+"Partially Observed Functions"))
 lines(  x=U_true_mat[,1], y=mean_true_vec, col="red")
 matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l",
-main=ifelse(DGP=="DGP1", "No Missings & No Noise", "No Missings"))
+main=ifelse(DGP=="DGP1", "Complete Functions (no noise)", "Complete Functions"))
 lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 par(mfrow=c(1,1))
 }

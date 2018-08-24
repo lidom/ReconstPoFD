@@ -7,7 +7,8 @@
 reconstructKneipLiebl(Ly, Lu, reconst_fcts = NULL,
   method = c("Error=0_AlignYES_CommonGrid", "Error>0_AlignYES",
   "Error>=0_AlignNO", "Error>0_AlignYES_CEscores", "Error>0_AlignNO_CEscores",
-  "PACE"), K = NULL, nRegGrid = NULL, maxbins = NULL, progrbar = FALSE)
+  "PACE", "Error=0_PACE"), K = NULL, nRegGrid = NULL, maxbins = NULL,
+  progrbar = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}
@@ -16,13 +17,13 @@ reconstructKneipLiebl(Ly, Lu, reconst_fcts = NULL,
 
 \item{reconst_fcts}{A vector specifying the list elements in Ly which need to be reconstructed. Default (reconst_fcts=NULL) will reconstruct all functions.}
 
-\item{method}{One of the following options: c('Error=0_AlignYES_CommonGrid', 'Error>0_AlignYES', 'Error>=0_AlignNO', 'Error>0_AlignYES_CEscores','Error>0_AlignNO_CEscores')}
+\item{method}{One of the following options: 'Error=0_AlignYES_CommonGrid', 'Error>0_AlignYES', 'Error>=0_AlignNO', 'Error>0_AlignYES_CEscores', 'Error>0_AlignNO_CEscores', 'PACE', 'Error=0_PACE'.}
 
-\item{K}{Truncation parameter. If K=NULL (default), K is determined using an AIC-type criterion.}
+\item{K}{Truncation parameter. If K=NULL (default), K is determined using GCV.}
 
-\item{nRegGrid}{Number of gridpoints within used for the reconstruction result.}
+\item{nRegGrid}{Number of gridpoints within [a,b] used for the reconstruction result.}
 
-\item{maxbins}{If maxbins=NULL (default), maxbins is set to 1000. For speeding up simulations, use, for instance maxbins=100.}
+\item{maxbins}{If maxbins=NULL (default), maxbins is set to 1000. For speeding up simulations, use, for instance maxbins=200.}
 
 \item{progrbar}{Show progress bar (TRUE) or not (FALSE, default)}
 }
@@ -42,14 +43,14 @@ Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]
 ##
 ## Reconstruction with alignments of reconstructed parts and presmoothed fragments
-## Classical scores
+## using integral scores
 reconst_result_1 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 method = 'Error>0_AlignYES', reconst_fcts = 1:3)
 Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
 U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
 ##
 ## Reconstruction with out alignments
-## Classical scores
+## using integral scores
 reconst_result_2 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 method = 'Error>=0_AlignNO', reconst_fcts = 1:3)
 Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
@@ -68,14 +69,14 @@ par(mfrow=c(1,1))
 
 
 ## Reconstruction with alignments of reconstructed parts and presmoothed fragments
-## PACE scores
+## using conditional expectation scores
 reconst_result_1 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 method = 'Error>0_AlignYES_CEscores', reconst_fcts = 1:3)
 Y_reconst_mat_1  <- matrix(unlist(reconst_result_1[['Y_reconst_list']]), ncol=3) 
 U_reconst_mat_1  <- matrix(unlist(reconst_result_1[['U_reconst_list']]), ncol=3) 
 ##
 ## Reconstruction with out alignments
-## PACE scores
+## using conditional expectation scores
 reconst_result_2 <- reconstructKneipLiebl(Ly = Y_list, Lu = U_list, 
 method = 'Error>0_AlignNO_CEscores', reconst_fcts = 1:3)
 Y_reconst_mat_2  <- matrix(unlist(reconst_result_2[['Y_reconst_list']]), ncol=3) 
@@ -93,9 +94,8 @@ matlines(x=U_mat[,1:3], y=Y_mat[,1:3], col=gray(.2), lwd=2)
 par(mfrow=c(1,1))
 
 
-##
 ## Generate partially observed functional data without error 
-SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP3")
+SimDat        <- simuldata(n = 50, a = a, b = b, DGP="DGP2")
 ## 
 Y_list   <- SimDat[['Y_list']]; Y_mat <- SimDat[['Y_mat']]
 U_list   <- SimDat[['U_list']]; U_mat <- SimDat[['U_mat']]

@@ -10,7 +10,7 @@
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples
-#' DGP=c('DGP1','DGP2','DGP3')[2]
+#' DGP=c('DGP1','DGP2','DGP3')[3]
 #' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 #' Y_mat         <- SimDat[['Y_mat']]
 #' U_mat         <- SimDat[['U_mat']]
@@ -19,10 +19,12 @@
 #' mean_true_vec <- SimDat[['mean_true_vec']]
 #' ##
 #' par(mfrow=c(2,1))
-#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", main="Missings")
+#' matplot(x=U_mat[,1:5], y=Y_mat[,1:5], col=gray(.5), type="l", 
+#' main=ifelse(DGP=="DGP1", "Partially Observed Functions (plus noise)", 
+#' "Partially Observed Functions"))
 #' lines(  x=U_true_mat[,1], y=mean_true_vec, col="red")
 #' matplot(x=U_true_mat[,1:5], y=Y_true_mat[,1:5], col=gray(.5), type="l",
-#' main=ifelse(DGP=="DGP1", "No Missings & No Noise", "No Missings"))
+#' main=ifelse(DGP=="DGP1", "Complete Functions (no noise)", "Complete Functions"))
 #' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
 simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3')[1], nRegGrid = 51, determ_obs_interv = NULL){
@@ -74,17 +76,8 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
   Y_mat      <- matrix(NA, m, n)
   k_vec      <- 1:n_basis
   for(i in 1:n){
-    #    if(DGP=="DGP1"){
-    # xi1 <- 25*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
-    # xi2 <- 25*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
     xi1 <- 50*sqrt(exp(-((k_vec-1)^2)/5)) * stats::rnorm(n=n_basis)
     xi2 <- 50*sqrt(exp(-((k_vec  )^2)/5)) * stats::rnorm(n=n_basis)
-    #    }
-    # plot(y=c(sqrt(10-(10/(n_basis + 1))*(k_vec - 1))), x=k_vec)
-    #    if(DGP=="DGP2"){
-    #      xi1 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec-1))) - sqrt(10-(10/(n_basis + 1))*(k_vec-1)))
-    #      xi2 <- c(stats::rexp(n=n_basis, rate=1/sqrt(10-(10/(n_basis + 1))*(k_vec)))   - sqrt(10-(10/(n_basis + 1))*(k_vec))) 
-    #    }
     ##
     Y_true_mat[,i] <- c(c(rowMeans(
       sapply(k_vec, function(k){
@@ -156,16 +149,12 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, de
       ## Random observed interval
       if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
         if(DGP=='DGP2'){
-          #A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
-          #B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
-          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * .5))
-          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * .5) 
+          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 1/3))   
+          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 1/3) # length of observed fragment: 2/3
         }
         if(DGP=='DGP3'){
-          #A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+ (b-a) * .45))
-          #B_vec[i]  <- stats::runif(n = 1, min = (b- (b-a) * .45), max = b)
-          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * .8))
-          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * .8) 
+          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 2/3))   
+          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 2/3) # length of observed fragment: 1/3
         }
       }else{
         A_vec[i] = a

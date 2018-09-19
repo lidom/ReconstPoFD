@@ -10,3 +10,14 @@ by Alois Kneip and Dominik Liebl (arXiv:1710.10099)
 
 `install_github("lidom/ReconstPoFD/ReconstPoFD")`
 
+
+## Using the Package
+
+`library(ReconstPoFD)`
+
+
+The main function containing our different reconstruction methods is:
+`reconstructKneipLiebl()`
+
+In order to get more information, check out its help file:
+`?reconstructKneipLiebl`

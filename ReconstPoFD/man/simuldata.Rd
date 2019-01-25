@@ -5,7 +5,7 @@
 \title{Simulate Data}
 \usage{
 simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
-  "DGP3")[1], nRegGrid = 51, determ_obs_interv = NULL)
+  "DGP3", "DGP4")[1], nRegGrid = 51, determ_obs_interv = NULL)
 }
 \arguments{
 \item{n}{Number of functions}
@@ -16,7 +16,7 @@ simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
 
 \item{b}{Upper interval boundary}
 
-\item{DGP}{Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores.}
+\item{DGP}{Data Generating Processes (see paper)}
 
 \item{nRegGrid}{Number of grid-points used for the equidistant 'workGrid'.}
 
@@ -26,7 +26,7 @@ simuldata(n = 100, m = 15, a = 0, b = 1, DGP = c("DGP1", "DGP2",
 This function allows to simulate partially observed functional data.
 }
 \examples{
-DGP=c('DGP1','DGP2','DGP3')[3]
+DGP=c('DGP1','DGP2','DGP3','DGP4')[1]
 SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 Y_mat         <- SimDat[['Y_mat']]
 U_mat         <- SimDat[['U_mat']]

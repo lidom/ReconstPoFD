@@ -5,12 +5,12 @@
 #' @param m                 Number of discretization points 
 #' @param a                 Lower interval boundary
 #' @param b                 Upper interval boundary
-#' @param DGP               Data Generating Process. DGP1: Gaussian scores. DGP2: Exponential scores. 
+#' @param DGP               Data Generating Processes (see paper)
 #' @param nRegGrid          Number of grid-points used for the equidistant 'workGrid'.
 #' @param determ_obs_interv Set a deterministic interval for the observed part. Default (determ_obs_interv = NULL) means random intervals.
 #' @export simuldata
 #' @examples
-#' DGP=c('DGP1','DGP2','DGP3')[3]
+#' DGP=c('DGP1','DGP2','DGP3','DGP4')[1]
 #' SimDat        <- simuldata(n = 50, m = 15, a = 0, b = 1, DGP=DGP)
 #' Y_mat         <- SimDat[['Y_mat']]
 #' U_mat         <- SimDat[['U_mat']]
@@ -27,20 +27,23 @@
 #' main=ifelse(DGP=="DGP1", "Complete Functions (no noise)", "Complete Functions"))
 #' lines(  x=U_true_mat[,1],   y=mean_true_vec, col="red")
 #' par(mfrow=c(1,1))
-simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3')[1], nRegGrid = 51, determ_obs_interv = NULL){
-  if(DGP=="DGP1"){SimDat <- simuldata_1(n=n, m=m, a=a, b=b, nRegGrid=nRegGrid, determ_obs_interv=determ_obs_interv)}
-  if(any(DGP==c("DGP2","DGP3"))){
+simuldata <- function(n = 100, m = 15, a = 0, b = 1, DGP=c('DGP1','DGP2','DGP3','DGP4')[1], nRegGrid = 51, determ_obs_interv = NULL){
+  if(any(DGP==c("DGP1","DGP2"))){
+    SimDat <- simuldata_1(n=n, m=m, a=a, b=b, DGP=DGP, nRegGrid=nRegGrid, determ_obs_interv=determ_obs_interv)
+  }
+  if(any(DGP==c("DGP3","DGP4"))){
     SimDat <- simuldata_2(n=n, a=a, b=b, DGP=DGP, nRegGrid=nRegGrid, determ_obs_interv=determ_obs_interv)
   }
   return(SimDat)
 }
 
 ##-------------------------------------------------------------------------------------
-simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs_interv = NULL){
+simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, DGP, nRegGrid = 51, determ_obs_interv = NULL){
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
-  eps_var  <- .125
+  if(DGP=="DGP1"){eps_var = .125}
+  if(DGP=="DGP2"){eps_var = .125 * 5}
   n_basis  <-  50
   ##
   ## Generation of prediction points U
@@ -110,7 +113,7 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, nRegGrid = 51, determ_obs
 }
 
 ##-------------------------------------------------------------------------------------
-simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, determ_obs_interv = NULL)
+simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4'), nRegGrid = 51, determ_obs_interv = NULL)
 {
   ##
   ## Number of grid points in [a,b]
@@ -148,11 +151,11 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP2','DGP3'), nRegGrid = 51, de
     if(is.null(determ_obs_interv)){
       ## Random observed interval
       if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
-        if(DGP=='DGP2'){
+        if(DGP=='DGP3'){
           A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 1/3))   
           B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 1/3) # length of observed fragment: 2/3
         }
-        if(DGP=='DGP3'){
+        if(DGP=='DGP4'){
           A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 2/3))   
           B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 2/3) # length of observed fragment: 1/3
         }

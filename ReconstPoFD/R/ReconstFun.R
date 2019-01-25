@@ -1,3 +1,12 @@
+## #####################################################
+##
+##  Caution! This file contains a set of depreciated
+##  functions. It's only used for our application, 
+##  where we use the iter_reconst_fun() function below.
+## 
+## ######################################################
+
+
 # #' Reconstruct partially observed functions
 # #'
 # #' This function allows you to reconstruct the missing parts of a function given the observed parts.

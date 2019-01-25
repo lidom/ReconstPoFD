@@ -6,9 +6,9 @@
 \usage{
 reconstructKneipLiebl(Ly, Lu, reconst_fcts = NULL,
   method = c("Error=0_AlignYES_CommonGrid", "Error>0_AlignYES",
-  "Error>=0_AlignNO", "Error>0_AlignYES_CEscores", "Error>0_AlignNO_CEscores",
-  "PACE", "Error=0_PACE"), K = NULL, nRegGrid = NULL, maxbins = NULL,
-  progrbar = FALSE)
+  "Error>=0_AlignNO", "Error>0_AlignYES_CEscores",
+  "Error>0_AlignNO_CEscores", "PACE", "Error=0_PACE"), K = NULL,
+  nRegGrid = NULL, maxbins = NULL, progrbar = FALSE)
 }
 \arguments{
 \item{Ly}{List of Y-values. The ith (i=1,...,n) list-element contains \eqn{Y_{i1},\dots,Y_{im}}{Y_{i1},...,Y_{im}}}

@@ -43,7 +43,7 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, DGP, nRegGrid = 51, deter
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
   if(DGP=="DGP1"){eps_var = .125}
-  if(DGP=="DGP2"){eps_var = .125 * 5}
+  if(DGP=="DGP2"){eps_var = .125 * 3}
   n_basis  <-  50
   ##
   ## Generation of prediction points U

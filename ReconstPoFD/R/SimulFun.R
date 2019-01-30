@@ -42,8 +42,9 @@ simuldata_1 <- function(n = 100, m = 15, a = 0, b = 1, DGP, nRegGrid = 51, deter
   ##
   ## meanfunction
   mean_fun <- function(u){return( ((u-a)/(b-a)) + 1*sin(2*pi*((u-a)/(b-a))) )}
-  if(DGP=="DGP1"){eps_var = .125}
-  if(DGP=="DGP2"){eps_var = .125 * 3}
+  ##
+  if(DGP=="DGP1"){eps_var = .0125}
+  if(DGP=="DGP2"){eps_var = .125}
   n_basis  <-  50
   ##
   ## Generation of prediction points U
@@ -152,8 +153,8 @@ simuldata_2 <- function(n=100, a=0, b=1, DGP=c('DGP3','DGP4'), nRegGrid = 51, de
       ## Random observed interval
       if(1 == stats::rbinom(n = 1, size = 1, prob = .75)){
         if(DGP=='DGP3'){
-          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 1/3))   
-          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 1/3) # length of observed fragment: 2/3
+          A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 1/2))   
+          B_vec[i]  <- A_vec[i] + 1 - (a+(b-a) * 1/2) # length of observed fragment: 1/2
         }
         if(DGP=='DGP4'){
           A_vec[i]  <- stats::runif(n = 1, min = a, max = (a+(b-a) * 2/3))   

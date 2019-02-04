@@ -13,7 +13,7 @@ library("tidyverse")
 library("xtable")
 
 ## Location to store the simulation results:
-your_path <- "/home/dom/Dropbox/Forschung/PRJ_OPEN/Kneip_Liebl_Reconstruction/Submission_3_Due_Feb1/Simulation_Study/"
+your_path <- "your/location/here"
 
 ## #######################################
 ## Number of target functions 

@@ -21,3 +21,6 @@ The main function containing our different reconstruction methods is:
 
 In order to get more information, check out its help file:
 `?reconstructKneipLiebl`
+
+
+The file `Simulation.R` allows to reproduce the simulation study in Section 6 of our manuscript.
